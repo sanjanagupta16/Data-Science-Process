@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1580443691581.000,
+    "dirty" : false,
+    "encoding" : "ISO8859-1",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "81141F29",
+    "lastKnownWriteTime" : 1580443879,
+    "last_content_update" : 1580443880006,
+    "path" : "~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project/seattle_analysis.r",
+    "project_path" : "seattle_analysis.r",
+    "properties" : {
+        "cursorPosition" : "140,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

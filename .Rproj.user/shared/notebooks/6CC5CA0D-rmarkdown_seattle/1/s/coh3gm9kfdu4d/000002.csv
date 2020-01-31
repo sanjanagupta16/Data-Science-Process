@@ -1,0 +1,5 @@
+"0","data1 <- read.csv(file = ""data/listings.csv"", header = TRUE)"
+"0","data2 <- read.csv(file = ""data/calendar.csv"")"
+"0","data3 <- read.csv(file = ""data/reviews.csv"")"
+"0",""
+"0","data_train <- data1"

@@ -1,0 +1,2 @@
+"0","summary_df <- data.frame(summary(data_train))"
+"0","write.csv(summary_df, ""summary.csv"")"
