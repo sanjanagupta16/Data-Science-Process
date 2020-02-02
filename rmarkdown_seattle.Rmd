@@ -2,7 +2,8 @@
 title: "Airbnb"
 author: "Sanjana Gupta"
 date: "30/01/2020"
-output: html_document
+output: pdf_document
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -17,6 +18,14 @@ library(ggplot2)
 library(naniar)
 library(leaflet)
 library(htmltools)
+library(choroplethr)
+library(dplyr)
+library(choroplethrMaps)
+library(ggplot2)
+library(gridExtra)
+library(ggmap)
+library(htmlwidgets)
+library(mapview)
 setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
 ```
 
@@ -31,17 +40,19 @@ data_train <- data1
 
 Viewing the data in different formats
 ```{r}
-View(data_train)
+#View(data_train)
 
 #to view data kinda nicely - uses dplyr
 glimpse(data_train)
-str(data1)
-summary(data_train)
-head(data_train, 1000)
-tail(data_train, 50)
+#str(data1)
+#summary(data_train)
+#head(data_train, 1000)
+#tail(data_train, 50)
 ```
 
-Data Cleaning - removing columns
+## Data Understanding & Data Cleanng
+
+1. Data Cleaning - removing columns
 ```{r}
 #cols_to_delete <- c("last_scraped", "thumbnail_url", "host_picture_url", "medium_url", "picture_url", "xl_picture_url", "host_thumbnail_url", "host_picture_url")
 #select(data_train, -contains("url"))
@@ -63,49 +74,103 @@ data_train$host_verifications <- NULL
 data_train$host_has_profile_pic <- NULL
 data_train$host_identity_verified <- NULL
 data_train$calendar_last_scraped <- NULL
-data_train$review_scores_communication <- NULL
-data_train$review_scores_location <- NULL
-data_train$review_scores_value <- NULL
 data_train$license <- NULL
 data_train$instant_bookable <- NULL
 data_train$require_guest_profile_picture <- NULL
 data_train$require_guest_phone_verification <- NULL
 data_train$summary <- NULL
 data_train$notes <- NULL
-#Down to 66 columns from initial 92
+#Down to 69 columns from initial 92
 
 rownames(data_train) <- NULL
 
 #Viewing the data
-glimpse(data_train)
-summary(data_train$is_location_exact)
+#glimpse(data_train)
+#summary(data_train$is_location_exact)
 ```
 
-Getting a summary of all fields
+2. Converting Data type for price to numeric
+```{r}
+data_train$price <- sub("\\$","",data_train$price)
+data_train$price <- sub(",","",data_train$price)
+data_train$price <- as.integer(data_train$price)
+```
+
+3. Changing data type of categorical variables to factor
+```{r}
+data_train$host_response_time <- as.factor(data_train$host_response_time)
+data_train$host_is_superhost <- as.factor(data_train$host_is_superhost)
+data_train$neighbourhood_cleansed <- as.factor(data_train$neighbourhood_cleansed)
+data_train$is_location_exact <- as.factor(data_train$is_location_exact)
+data_train$property_type <- as.factor(data_train$property_type)
+data_train$room_type <- as.factor(data_train$room_type)
+data_train$bed_type <- as.factor(data_train$bed_type)
+data_train$calendar_updated <- as.factor(data_train$calendar_updated)
+data_train$cancellation_policy <- as.factor(data_train$cancellation_policy)
+```
+
+4. Changing host reponse time and extra people from character to numeric
+```{r}
+data_train$host_response_rate<- as.numeric(sub("%", "", data_train$host_response_rate))
+data_train$host_response_rate <- data_train$host_response_rate/100
+data_train$extra_people <- as.numeric(sub("\\$","",data_train$extra_people))
+```
+
+5. Checking if Price = 0 for any listings
+```{r}
+0 %in% data_train$price
+```
+All Airbnb listings have a price associated with it
+
+6. Removing rows with NA
+```{r}
+#is.null(data_train$zipcode)
+data_train %>% filter_all(all_vars(!is.na(.)))
+data_train %>% filter_all(all_vars(complete.cases(.)))  
+```
+
+7. Removing rows with null values
+```{r}
+data_train %>% filter_all(all_vars(!is.null(.)))
+data_train %>% filter_all(all_vars(complete.cases(.)))  
+```
+
+8. Getting a summary of all fields
 ```{r}
 summary_df <- data.frame(summary(data_train))
-write.csv(summary_df, "summary.csv")
+#write.csv(summary_df, "summary.csv")
 ```
 
-Checking for missing values and plotting the data
+9. Checking for missing values and plotting the data
 ```{r}
 check_missing<- function(x){
   if (is.character(x)) sum(x=="") else sum(is.na(x))
 }
 NMISS<-data.frame(nmiss=sapply(data_train,check_missing))
-write.csv(NMISS, "missing.csv")
+#write.csv(NMISS, "missing.csv")
 
 #plotting missing data
 missingdata <- data_train
 missingdata[missingdata == ""] <- NA
 missingdata <- missingdata %>% select(host_is_superhost, review_scores_rating,
                                       host_response_time, name, host_since, zipcode, latitude,longitude,
-                                      host_location, host_response_rate,neighbourhood_cleansed, country, country_code,
-                                      property_type, price,weekly_price, monthly_price)
-gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data", x = "Attribute")  + theme_bw() + theme(text=element_text(color = "dark blue"))
+                                      host_location, host_response_rate,neighbourhood_cleansed,
+                                      property_type, price,weekly_price, monthly_price, bedrooms, bathrooms)
+gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data", x = "Attribute")  + theme_bw() + theme(text=element_text(color = "dark blue")) 
 ```
-Analysing neighborhood groupings - this is categorical data
 
+10. Replacing missing values
+```{r}
+data_train$review_scores_rating <- ifelse(is.na(data_train$review_scores_rating)==T,97,data_train$review_scores_rating)
+data_train$host_response_rate <- ifelse(is.na(data_train$host_response_rate)==T,97,data_train$host_response_rate)
+
+#Using same plot as before to check the values
+gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data", x = "Attribute")  + theme_bw() + theme(text=element_text(color = "dark blue")) 
+```
+
+## Data Understanding - plots
+
+1. Analysing neighborhood grouping
 ```{r}
 #In neighborhood group cleansed, there are 794 rows with "Other Neighborhoods"
 #Need to fix this - maybe look at neighorhood cleansed column instead?
@@ -117,47 +182,150 @@ count(data_train, 'neighbourhood_group_cleansed')
 count(data_train, 'neighbourhood_cleansed')
 
 #Getting a count of listings per neighborhood
-write.csv(neigborhood_data, "neighborhoodcount.csv")
-count(data_train$neighbourhood_cleansed)
+#write.csv(neigborhood_data, "neighborhoodcount.csv")
+#count(data_train$neighbourhood_cleansed)
 plot(data_train$neighbourhood_cleansed, xlab = 'Neighborhoods', ylab = 'Count')
 neighborhood <- (data_train$neighbourhood_cleansed)
 #x <- sort(count((neighborhood)))
 #arrange(data_train, neighbourhood_cleansed)
 neighborhood_data <- data_train[order(data_train[,21] ),]
 summary(neighborhood_data$neighbourhood_cleansed)
+```
 
+```{r}
 #Trying to fix "Other Neighborhoods" value in neighborhood group cleaned column
-for(i in data_train)
-  if(i[neighbourhood_group_cleansed] == "Other neighborhoods")
-    i[neighbourhood_group_cleansed] <-  i[neighborhood_cleansed]
+#for(i in data_train)
+ # if(i[neighbourhood_group_cleansed] == "Other neighborhoods")
+  #  i[neighbourhood_group_cleansed] <-  i[neighborhood_cleansed]
 
 #Plotting count of listings per neighborhood
 neigborhood_data <- table(data_train$neighbourhood_cleansed)
 
 barplot(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE), ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE)
-
-barplot(table(data_train$neighbourhood_group_cleansed), density = 20, ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE)
-
-#ggplot(as.data.frame(table(data_train$neighbourhood_cleansed)), aes(factor(neighborhood), Freq, fill = Freq)) + xlim(0,10) + geom_col(position = 'dodge')
-
 ```
 
-Looking at some more plots
 ```{r}
-hist(data_train$host_listings_count, main = "Count of Host Listings", xlab = "", ylab = "Count")
-barchart(data_train$property_type, main = "Typess of Airbnb Properties", xlab = "Count")
-plot(data_train$host_is_superhost)
+#barplot(table(data_train$neighbourhood_group_cleansed), density = 20, ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(data_train, aes(neighbourhood_group_cleansed)) + geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
+2. Looking at some more plots - Count of Host Listings
+```{r}
+#barplot(data_train$host_listings_count, main = "Count of Host Listings", xlab = "", ylab = "Count") 
+ggplot(data_train, aes(host_listings_count)) + geom_bar(na.rm = TRUE) + xlim(0,21) 
+```
+# Most hosts have a single Airbnb listing.
 
-Plotting lat long on a map
+3. Looking at Types of Airbnb properties
+```{r}
+#barchart(data_train$property_type, main = "Types of Airbnb Properties", xlab = "Count")
+prop_type <- table(data_train$property_type)
+barplot(table(data_train$property_type), ylab = "Count",horiz = FALSE, main = "Types of Airbnb Properties", beside = FALSE, las = 1)
+
+ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+#plot(data_train$host_is_superhost)
+```
+
+4. Prices per nNeighborhood
+```{r}
+table(data_train$room_type,data_train$neighbourhood_group)
+```
+```{r}
+data_train %>% boxplot(price ~ neighbourhood_group_cleansed,data = ., main="Box Plot of price vs neighbourhood", 
+                     ylab="neighbourhood", xlab="Price",horizontal=TRUE)
+```
+
+5. Number of listings per neighborhood
+```{r}
+ggplot(data_train, aes(x = fct_infreq(neighbourhood_cleansed), fill = room_type)) +
+    geom_bar() +
+    labs(title = "No. of listings by neighborhood",
+         x = "Neighborhood", y = "No. of listings") +
+    theme(legend.position = "bottom") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+Looks messy, want to consider looking at only the top 10 neighborhoods
+
+6. Top 10 neighborhoods - doesn't work - need to fix this
+```{r}
+#top_10 <- data_train %>% group_by(neighborhood_cleansed) %>% tally()
+top_10 <- data_train %>% top_n(n = 10, wt = neighbourhood_group_cleansed) %>% arrange(neighbourhood_group_cleansed) %>% summarize(neighbourhood_group_cleansed = n())
+top_10
+```
+
+7. Creating a variable to find the number of days since the listing has been on Airbnb
+```{r}
+data_train$host_since <- as.Date(data_train$host_since)
+data_train$host_since <- as.Date("2017-05-10")-data_train$host_since
+```
+
+8. Looking at outliers for price
+```{r}
+ggplot(data=data_train, aes(price)) + 
+  geom_histogram(fill="red") + 
+  labs(title="Histogram of Price") +
+  labs(x="Price", y="Count")
+# Percentile of price
+quantile(data_train$price, c(.9, .95, .97, 0.975, 0.98, 0.99, 0.995, 0.999, 0.9999))
+```
+9. Room Type Analysis
+# For a private room
+```{r}
+Private_rooms <- data_train %>% filter(room_type == "Private room")
+Private_rooms$price %>% summary()
+```
+# For an entire apartment
+```{r}
+entire_house <- data_train %>% filter(room_type == "Entire home/apt")
+entire_house$price %>% summary()
+```
+#Shared room
+```{r}
+shared_room <- data_train %>% filter(room_type == "Shared room")
+shared_room$price %>% summary()
+```
+
+10. Average prices for each room type
+```{r}
+listingdf <- read.csv('data/listings.csv')
+zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_review = mean(review_scores_location, na.rm = TRUE))
+
+average_price <- data_train %>% group_by(room_type) %>% summarise(price = mean(price))
+colnames(average_price)[1] <- "Room Type"
+colnames(average_price)[2] <- "Average Price"
+print((average_price))
+```
+
+11. Top 50 most expensive listings
+```{r patial Data 1.3, echo=FALSE, message=FALSE, warning=FALSE}
+top_df <- data_train %>% top_n(n = 50, wt = price)
+
+# get background map
+top_height <- max(top_df$latitude) - min(top_df$latitude)
+top_width <- max(top_df$longitude) - min(top_df$longitude)
+top_borders <- c(bottom  = min(top_df$latitude)  - 0.1 * top_height,
+                 top     = max(top_df$latitude)  + 0.1 * top_height,
+                 left    = min(top_df$longitude) - 0.1 * top_width,
+                 right   = max(top_df$longitude) + 0.1 * top_width)
+
+top_map <- get_stamenmap(top_borders, zoom = 13, maptype = "toner-lite")
+
+# map of top 50 most expensive
+ggmap(top_map) +
+    geom_point(data = top_df, mapping = aes(x = longitude, y = latitude,
+                                        col = price)) +
+    scale_color_gradient(low = "blue", high = "red")
+```
+
+## Feature Engineering
+1. Clustering
+Plotting the listings on the map of Seattle
 ```{r}
 #Reading Listings Data
 listingdf <- read.csv('data/listings.csv')
 #Creating a link for each pop up
 
 #Creating Listings across Seattle
-leaflet(listingdf) %>%
+map <- leaflet(listingdf) %>%
   addTiles() %>%
   addMarkers(~longitude, ~latitude,labelOptions = labelOptions(noHide = T),
              clusterOptions = markerClusterOptions(),
@@ -167,18 +335,73 @@ leaflet(listingdf) %>%
              )) %>% 
   setView(-122.335167, 47.608013, zoom = 11) %>%
   addProviderTiles("CartoDB.Positron")
+map
+mapshot(map, url = paste0(getwd(),"/map.html"))
 ```
 This shows listings in a clustered fashion. Clicking on a cluster zooms into the listings belonging to it.
 Clicking on a pin gives you a pop up with some details about the property.
 We can see that most of the listings are clustered around Downtown and Cap Hill.
 
+2. Linear Regression
+Which variables influence price?
+Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type
+```{r}
+summary(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+```
+Private and Shared rooms, accommodates, bedrooms, bathrooms have a singificant impact on price.
+So does Property Type = Boat - which is weird.
 
+Pairwise comparison
+```{r}
+# price vs bathrooms
+p1 <- ggplot(data_train, aes(x=bathrooms, y=price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
 
+# price vs accommodates
+p2 <- ggplot(data_train, aes(x=accommodates, y=price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
 
+# price vs bedrooms
+p3 <- ggplot(data_train, aes(x=bedrooms, y=price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
 
+# price vs room_type
+p4 <- ggplot(data_train, aes(x=room_type, y=price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
 
+# combining all plots
+grid.arrange(p1, p2, p3, p4,ncol = 2)
+```
 
+Which locations have a better rating? 
+# Doesn't work
+```{r Spatial Data 1.2, echo=FALSE, message=FALSE, warning=FALSE}
+zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_review = mean(review_scores_location, na.rm = TRUE))
+zipReviews <- zipReviews[-c(1, 29),]
+#zipReviews <- zipReviews$avg_loc_review[2:28]
+colnames(zipReviews) <- c("region","value")
+#zipReviews$value <- as.numeric(zipReviews$value[2:28])
+zipReviews$region <- as.character(zipReviews$region)
 
-
+seattle_county_names = c("king","Snohomish","pierce")
+#seattle_fips = county.regions %>% filter(state.name = "washington" & county.name %in% seattle_county_names) %>% select(region)
+seattle_fips = c(53033)
+#county_choropleth(zipReviews)
+county_choropleth(zipReviews, county_zoom = seattle_fips, title = "Location Review Scores by Region", legend ="Average Score") + ggtitle("Which area is the best?",
+          subtitle = "Map showing Average Location Score by Area") +
+  theme(plot.title = element_text(face = "bold")) +
+  theme(plot.subtitle = element_text(face = "bold", color = "grey35")) +
+  theme(plot.caption = element_text(color = "grey68"))+scale_color_gradient(low="#d3cbcb", high="#852eaa")+ scale_fill_brewer("Location Review Score",palette=3)
+g_locations
+```
 
 
