@@ -383,26 +383,3 @@ p4 <- ggplot(data_train, aes(x=room_type, y=price)) +
 grid.arrange(p1, p2, p3, p4,ncol = 2)
 ```
 
-Which locations have a better rating? 
-# Doesn't work
-```{r Spatial Data 1.2, echo=FALSE, message=FALSE, warning=FALSE}
-zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_review = mean(review_scores_location, na.rm = TRUE))
-zipReviews <- zipReviews[-c(1, 29),]
-#zipReviews <- zipReviews$avg_loc_review[2:28]
-colnames(zipReviews) <- c("region","value")
-#zipReviews$value <- as.numeric(zipReviews$value[2:28])
-zipReviews$region <- as.character(zipReviews$region)
-
-seattle_county_names = c("king","Snohomish","pierce")
-#seattle_fips = county.regions %>% filter(state.name = "washington" & county.name %in% seattle_county_names) %>% select(region)
-seattle_fips = c(53033)
-#county_choropleth(zipReviews)
-county_choropleth(zipReviews, county_zoom = seattle_fips, title = "Location Review Scores by Region", legend ="Average Score") + ggtitle("Which area is the best?",
-          subtitle = "Map showing Average Location Score by Area") +
-  theme(plot.title = element_text(face = "bold")) +
-  theme(plot.subtitle = element_text(face = "bold", color = "grey35")) +
-  theme(plot.caption = element_text(color = "grey68"))+scale_color_gradient(low="#d3cbcb", high="#852eaa")+ scale_fill_brewer("Location Review Score",palette=3)
-g_locations
-```
-
-
