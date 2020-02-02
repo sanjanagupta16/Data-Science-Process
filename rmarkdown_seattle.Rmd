@@ -316,7 +316,8 @@ ggmap(top_map) +
     scale_color_gradient(low = "blue", high = "red")
 ```
 
-## Feature Engineering
+## Model Selection
+
 1. Clustering
 Plotting the listings on the map of Seattle
 ```{r}
