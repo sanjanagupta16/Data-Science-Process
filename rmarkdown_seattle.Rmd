@@ -3,14 +3,13 @@ title: "Airbnb"
 author: "Sanjana Gupta"
 date: "30/01/2020"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 always_allow_html: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+#### GitHub repo - https://github.com/sanjanagupta16/DATA598C-Data-Science-Process
 
 Importing Libraries and setting cwd
 ```{r}
@@ -30,6 +29,7 @@ library(htmlwidgets)
 library(mapview)
 library(dplyr)
 library(plotly)
+library(devtools)
 setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
 ```
 
@@ -254,8 +254,8 @@ Looks messy, want to consider looking at only the top 10 neighborhoods
 #top_10 <- data_train %>% group_by(neighborhood_cleansed) %>% tally()
 #top_10 <- data_train %>% top_n(n = 10, wt = neighbourhood_group_cleansed) %>% arrange(neighbourhood_group_cleansed) %>% #summarize(neighbourhood_group_cleansed = n())
 
-#top_10 <- data_train[data_train$neighbourhood_group_cleansed %in% names(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE)[0:1]),]
-top_10$neighbourhood_group_cleansed <- data_train %>% top_n(10) %>% group_by(neighbourhood_group_cleansed) %>% tally() 
+top_10 <- data_train[data_train$neighbourhood_group_cleansed %in% names(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE)[0:1]),]
+#top_10 <- data_train %>% top_n(10) %>% group_by(neighbourhood_group_cleansed) %>% tally() 
 table(top_10$neighbourhood_group_cleansed)
 ```
 
@@ -357,7 +357,7 @@ Which variables influence price?
 Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type
 ```{r}
 LM_res <- summary(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
-plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed), data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_res
 
 ```
@@ -412,3 +412,10 @@ head(actual_pred)
 ```
 
 Model Fit for Linear Regression -- R^2, Residual Analysis, F-statistic
+
+4. ANOVA - to compare categorical data
+```{r}
+AOV_res <- summary(aov(price ~ factor(property_type) + factor(neighbourhood_cleansed), data = data_train))
+AOV_res
+```
+As we can see, property type and neighborhood do have a significant impact on price since the p-value is much smaller than the significance level.
