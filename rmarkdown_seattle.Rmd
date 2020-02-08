@@ -2,8 +2,10 @@
 title: "Airbnb"
 author: "Sanjana Gupta"
 date: "30/01/2020"
-output: pdf_document
-always_allow_html: true
+output:
+  html_document:
+    df_print: paged
+always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -26,6 +28,8 @@ library(gridExtra)
 library(ggmap)
 library(htmlwidgets)
 library(mapview)
+library(dplyr)
+library(plotly)
 setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
 ```
 
@@ -248,8 +252,11 @@ Looks messy, want to consider looking at only the top 10 neighborhoods
 6. Top 10 neighborhoods - doesn't work - need to fix this
 ```{r}
 #top_10 <- data_train %>% group_by(neighborhood_cleansed) %>% tally()
-top_10 <- data_train %>% top_n(n = 10, wt = neighbourhood_group_cleansed) %>% arrange(neighbourhood_group_cleansed) %>% summarize(neighbourhood_group_cleansed = n())
-top_10
+#top_10 <- data_train %>% top_n(n = 10, wt = neighbourhood_group_cleansed) %>% arrange(neighbourhood_group_cleansed) %>% #summarize(neighbourhood_group_cleansed = n())
+
+#top_10 <- data_train[data_train$neighbourhood_group_cleansed %in% names(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE)[0:1]),]
+top_10$neighbourhood_group_cleansed <- data_train %>% top_n(10) %>% group_by(neighbourhood_group_cleansed) %>% tally() 
+table(top_10$neighbourhood_group_cleansed)
 ```
 
 7. Creating a variable to find the number of days since the listing has been on Airbnb
@@ -307,7 +314,7 @@ top_borders <- c(bottom  = min(top_df$latitude)  - 0.1 * top_height,
                  left    = min(top_df$longitude) - 0.1 * top_width,
                  right   = max(top_df$longitude) + 0.1 * top_width)
 
-top_map <- get_stamenmap(top_borders, zoom = 13, maptype = "toner-lite")
+top_map <- get_stamenmap(top_borders, zoom = 12, maptype = "toner-lite")
 
 # map of top 50 most expensive
 ggmap(top_map) +
@@ -319,6 +326,8 @@ ggmap(top_map) +
 ## Model Selection
 
 1. Clustering
+Used Clustering to compare which areas of Seattle have a higher concentration of airbnb listings.
+
 Plotting the listings on the map of Seattle
 ```{r}
 #Reading Listings Data
@@ -347,8 +356,10 @@ We can see that most of the listings are clustered around Downtown and Cap Hill.
 Which variables influence price?
 Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type
 ```{r}
-summary(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
+LM_res <- summary(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
 plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+LM_res
+
 ```
 Private and Shared rooms, accommodates, bedrooms, bathrooms have a singificant impact on price.
 So does Property Type = Boat - which is weird.
@@ -383,3 +394,21 @@ p4 <- ggplot(data_train, aes(x=room_type, y=price)) +
 grid.arrange(p1, p2, p3, p4,ncol = 2)
 ```
 
+3. Predicting Price using Linear Regression Model
+```{r}
+set.seed(100)
+trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
+trainingData <- data_train[trainingRowIndex,]
+testData <- data_train[-trainingRowIndex,]
+lm_model <- lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = trainingData)
+price_pred <- predict(lm_model, testData)
+
+summary(lm_model)
+
+actual_pred <- data.frame(cbind(actuals = testData$price, predicteds = price_pred))
+correlation_accuracy <- cor(actual_pred)
+
+head(actual_pred)
+```
+
+Model Fit for Linear Regression -- R^2, Residual Analysis, F-statistic
