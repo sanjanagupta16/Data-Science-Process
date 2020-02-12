@@ -3,16 +3,16 @@ title: "Airbnb"
 author: "Sanjana Gupta"
 date: "30/01/2020"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 always_allow_html: yes
 ---
 
 #### GitHub repo - https://github.com/sanjanagupta16/DATA598C-Data-Science-Process
 
 Importing Libraries and setting cwd
-```{r}
+```{r libraries}
 library(tidyverse)
 library(plotly)
 library(ggplot2)
@@ -30,11 +30,14 @@ library(mapview)
 library(dplyr)
 library(plotly)
 library(devtools)
-setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
+library(kableExtra)
+library(here)
+#setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
+#setwd(here("/Data Science Project"))
 ```
 
 Importing data and creating a training dataset
-```{r}
+```{r import-data}
 data1 <- read.csv(file = "data/listings.csv", header = TRUE)
 data2 <- read.csv(file = "data/calendar.csv")
 data3 <- read.csv(file = "data/reviews.csv")
@@ -43,11 +46,11 @@ data_train <- data1
 ```
 
 Viewing the data in different formats
-```{r}
+```{r view-data}
 #View(data_train)
 
 #to view data kinda nicely - uses dplyr
-glimpse(data_train)
+#glimpse(data_train)
 #str(data1)
 #summary(data_train)
 #head(data_train, 1000)
@@ -57,7 +60,7 @@ glimpse(data_train)
 ## Data Understanding & Data Cleanng
 
 1. Data Cleaning - removing columns
-```{r}
+```{r data-clean}
 #cols_to_delete <- c("last_scraped", "thumbnail_url", "host_picture_url", "medium_url", "picture_url", "xl_picture_url", "host_thumbnail_url", "host_picture_url")
 #select(data_train, -contains("url"))
 data_train$last_scraped <- NULL
@@ -94,14 +97,14 @@ rownames(data_train) <- NULL
 ```
 
 2. Converting Data type for price to numeric
-```{r}
+```{r convert-num}
 data_train$price <- sub("\\$","",data_train$price)
 data_train$price <- sub(",","",data_train$price)
 data_train$price <- as.integer(data_train$price)
 ```
 
 3. Changing data type of categorical variables to factor
-```{r}
+```{r convert-factor}
 data_train$host_response_time <- as.factor(data_train$host_response_time)
 data_train$host_is_superhost <- as.factor(data_train$host_is_superhost)
 data_train$neighbourhood_cleansed <- as.factor(data_train$neighbourhood_cleansed)
@@ -114,39 +117,45 @@ data_train$cancellation_policy <- as.factor(data_train$cancellation_policy)
 ```
 
 4. Changing host reponse time and extra people from character to numeric
-```{r}
+```{r convert-num2}
 data_train$host_response_rate<- as.numeric(sub("%", "", data_train$host_response_rate))
 data_train$host_response_rate <- data_train$host_response_rate/100
 data_train$extra_people <- as.numeric(sub("\\$","",data_train$extra_people))
 ```
 
 5. Checking if Price = 0 for any listings
-```{r}
+```{r check-price}
 0 %in% data_train$price
 ```
 All Airbnb listings have a price associated with it
 
 6. Removing rows with NA
-```{r}
+```{r echo= FALSE, remove-NA}
 #is.null(data_train$zipcode)
 data_train %>% filter_all(all_vars(!is.na(.)))
 data_train %>% filter_all(all_vars(complete.cases(.)))  
 ```
 
 7. Removing rows with null values
-```{r}
+```{r remove-null}
 data_train %>% filter_all(all_vars(!is.null(.)))
 data_train %>% filter_all(all_vars(complete.cases(.)))  
 ```
 
 8. Getting a summary of all fields
-```{r}
+```{r summary}
 summary_df <- data.frame(summary(data_train))
 #write.csv(summary_df, "summary.csv")
 ```
 
-9. Checking for missing values and plotting the data
-```{r}
+9. Adding log price column
+```{r log-Price}
+data_train$log_price <- log(data_train$price)
+```
+
+
+10. Checking for missing values and plotting the data
+```{r missing-data}
 check_missing<- function(x){
   if (is.character(x)) sum(x=="") else sum(is.na(x))
 }
@@ -163,8 +172,8 @@ missingdata <- missingdata %>% select(host_is_superhost, review_scores_rating,
 gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data", x = "Attribute")  + theme_bw() + theme(text=element_text(color = "dark blue")) 
 ```
 
-10. Replacing missing values
-```{r}
+11. Replacing missing values
+```{r replace-missing}
 data_train$review_scores_rating <- ifelse(is.na(data_train$review_scores_rating)==T,97,data_train$review_scores_rating)
 data_train$host_response_rate <- ifelse(is.na(data_train$host_response_rate)==T,97,data_train$host_response_rate)
 
@@ -175,7 +184,7 @@ gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data"
 ## Data Understanding - plots
 
 1. Analysing neighborhood grouping
-```{r}
+```{r neighborhood}
 #In neighborhood group cleansed, there are 794 rows with "Other Neighborhoods"
 #Need to fix this - maybe look at neighorhood cleansed column instead?
 #Looking at categorical data now
@@ -196,7 +205,7 @@ neighborhood_data <- data_train[order(data_train[,21] ),]
 summary(neighborhood_data$neighbourhood_cleansed)
 ```
 
-```{r}
+```{r plot1}
 #Trying to fix "Other Neighborhoods" value in neighborhood group cleaned column
 #for(i in data_train)
  # if(i[neighbourhood_group_cleansed] == "Other neighborhoods")
@@ -208,20 +217,20 @@ neigborhood_data <- table(data_train$neighbourhood_cleansed)
 barplot(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE), ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE)
 ```
 
-```{r}
+```{r plot2}
 #barplot(table(data_train$neighbourhood_group_cleansed), density = 20, ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggplot(data_train, aes(neighbourhood_group_cleansed)) + geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 2. Looking at some more plots - Count of Host Listings
-```{r}
+```{r count-listings}
 #barplot(data_train$host_listings_count, main = "Count of Host Listings", xlab = "", ylab = "Count") 
 ggplot(data_train, aes(host_listings_count)) + geom_bar(na.rm = TRUE) + xlim(0,21) 
 ```
 # Most hosts have a single Airbnb listing.
 
 3. Looking at Types of Airbnb properties
-```{r}
+```{r property_type}
 #barchart(data_train$property_type, main = "Types of Airbnb Properties", xlab = "Count")
 prop_type <- table(data_train$property_type)
 barplot(table(data_train$property_type), ylab = "Count",horiz = FALSE, main = "Types of Airbnb Properties", beside = FALSE, las = 1)
@@ -231,16 +240,20 @@ ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") 
 ```
 
 4. Prices per nNeighborhood
-```{r}
-table(data_train$room_type,data_train$neighbourhood_group)
+```{r price-neighborhood}
+z = table(data_train$room_type,data_train$neighbourhood_group)
+kable(z)  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed","responsive"))
 ```
-```{r}
+
+
+```{r boxplot1}
 data_train %>% boxplot(price ~ neighbourhood_group_cleansed,data = ., main="Box Plot of price vs neighbourhood", 
                      ylab="neighbourhood", xlab="Price",horizontal=TRUE)
 ```
 
 5. Number of listings per neighborhood
-```{r}
+```{r listings}
 ggplot(data_train, aes(x = fct_infreq(neighbourhood_cleansed), fill = room_type)) +
     geom_bar() +
     labs(title = "No. of listings by neighborhood",
@@ -250,23 +263,24 @@ ggplot(data_train, aes(x = fct_infreq(neighbourhood_cleansed), fill = room_type)
 Looks messy, want to consider looking at only the top 10 neighborhoods
 
 6. Top 10 neighborhoods - doesn't work - need to fix this
-```{r}
+```{r top10}
 #top_10 <- data_train %>% group_by(neighborhood_cleansed) %>% tally()
 #top_10 <- data_train %>% top_n(n = 10, wt = neighbourhood_group_cleansed) %>% arrange(neighbourhood_group_cleansed) %>% #summarize(neighbourhood_group_cleansed = n())
 
 top_10 <- data_train[data_train$neighbourhood_group_cleansed %in% names(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE)[0:1]),]
 #top_10 <- data_train %>% top_n(10) %>% group_by(neighbourhood_group_cleansed) %>% tally() 
-table(top_10$neighbourhood_group_cleansed)
+top_10.val <- table(top_10$neighbourhood_group_cleansed)
+kable(top_10.val)
 ```
 
 7. Creating a variable to find the number of days since the listing has been on Airbnb
-```{r}
+```{r create-var}
 data_train$host_since <- as.Date(data_train$host_since)
 data_train$host_since <- as.Date("2017-05-10")-data_train$host_since
 ```
 
 8. Looking at outliers for price
-```{r}
+```{r outliers}
 ggplot(data=data_train, aes(price)) + 
   geom_histogram(fill="red") + 
   labs(title="Histogram of Price") +
@@ -276,23 +290,23 @@ quantile(data_train$price, c(.9, .95, .97, 0.975, 0.98, 0.99, 0.995, 0.999, 0.99
 ```
 9. Room Type Analysis
 # For a private room
-```{r}
+```{r private-room}
 Private_rooms <- data_train %>% filter(room_type == "Private room")
 Private_rooms$price %>% summary()
 ```
 # For an entire apartment
-```{r}
+```{r entire-apt}
 entire_house <- data_train %>% filter(room_type == "Entire home/apt")
 entire_house$price %>% summary()
 ```
 #Shared room
-```{r}
+```{r shared-room}
 shared_room <- data_train %>% filter(room_type == "Shared room")
 shared_room$price %>% summary()
 ```
 
 10. Average prices for each room type
-```{r}
+```{r avg-price}
 listingdf <- read.csv('data/listings.csv')
 zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_review = mean(review_scores_location, na.rm = TRUE))
 
@@ -329,7 +343,7 @@ ggmap(top_map) +
 Used Clustering to compare which areas of Seattle have a higher concentration of airbnb listings.
 
 Plotting the listings on the map of Seattle
-```{r}
+```{r clustering}
 #Reading Listings Data
 listingdf <- read.csv('data/listings.csv')
 #Creating a link for each pop up
@@ -352,40 +366,63 @@ This shows listings in a clustered fashion. Clicking on a cluster zooms into the
 Clicking on a pin gives you a pop up with some details about the property.
 We can see that most of the listings are clustered around Downtown and Cap Hill.
 
-2. Linear Regression
+2. Linear Regression without interaction
 Which variables influence price?
 Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type
-```{r}
-LM_res <- summary(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
+```{r LR}
+LM_res <- summary(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
 plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed), data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_res
 
 ```
-Private and Shared rooms, accommodates, bedrooms, bathrooms have a singificant impact on price.
-So does Property Type = Boat - which is weird.
+Results:
 
-Pairwise comparison
-```{r}
+Private and Shared rooms, accommodates, bedrooms, bathrooms have a significant impact on price.
+So does Property Type = Boat - which is weird.
+R-square is 54%, which is not bad
+
+3. Taking log(price) with multiple regression:
+```{r lR-with-logprice}
+LM_res2 <- summary(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed), data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+LM_res2
+```
+Results:
+Transforming price to log has a higher R-squared value of 61%. 
+Going forward, using log_price instead price.
+
+4. Linear Regression with interaction
+```{r LR-interacion}
+LM_res3 <- summary(lm(formula = log_price ~ room_type * accommodates * bedrooms + bathrooms * property_type, data = data_train))
+plot(log_price ~room_type * accommodates * bedrooms * bathrooms * property_type, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+LM_res3
+
+```
+Results:
+R-square is at 62%. 
+
+5. Pairwise comparison
+```{r pairwise}
 # price vs bathrooms
-p1 <- ggplot(data_train, aes(x=bathrooms, y=price)) +
+p1 <- ggplot(data_train, aes(x=bathrooms, y=log_price)) +
   geom_point(colour = "orange", size = 1.5) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
 
 # price vs accommodates
-p2 <- ggplot(data_train, aes(x=accommodates, y=price)) +
+p2 <- ggplot(data_train, aes(x=accommodates, y=log_price)) +
   geom_point(colour = "orange", size = 1.5) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
 
 # price vs bedrooms
-p3 <- ggplot(data_train, aes(x=bedrooms, y=price)) +
+p3 <- ggplot(data_train, aes(x=bedrooms, y=log_price)) +
   geom_point(colour = "orange", size = 1.5) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
 
 # price vs room_type
-p4 <- ggplot(data_train, aes(x=room_type, y=price)) +
+p4 <- ggplot(data_train, aes(x=room_type, y=log_price)) +
   geom_point(colour = "orange", size = 1.5) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
@@ -394,28 +431,102 @@ p4 <- ggplot(data_train, aes(x=room_type, y=price)) +
 grid.arrange(p1, p2, p3, p4,ncol = 2)
 ```
 
-3. Predicting Price using Linear Regression Model
-```{r}
+6. Predicting Price using Linear Regression Model
+```{r predict-price}
 set.seed(100)
 trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
 trainingData <- data_train[trainingRowIndex,]
 testData <- data_train[-trainingRowIndex,]
-lm_model <- lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = trainingData)
+lm_model <- lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = trainingData)
 price_pred <- predict(lm_model, testData)
 
 summary(lm_model)
 
-actual_pred <- data.frame(cbind(actuals = testData$price, predicteds = price_pred))
+actual_pred <- data.frame(cbind(actuals = testData$log_price, predicteds = price_pred))
 correlation_accuracy <- cor(actual_pred)
 
 head(actual_pred)
 ```
 
-Model Fit for Linear Regression -- R^2, Residual Analysis, F-statistic
+7. Correlation matrix
+```{r corr}
+data.corr <- data_train %>% filter(!is.na(accommodates)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>%
+  select(log_price, price, bedrooms, bathrooms, accommodates)
+kable(cor(data.corr)) %>% kable_styling()
+```
+Bedrooms, bathrooms and accommodates have a correlation with price.
 
-4. ANOVA - to compare categorical data
-```{r}
-AOV_res <- summary(aov(price ~ factor(property_type) + factor(neighbourhood_cleansed), data = data_train))
+
+8. Create a CART model
+```{r Cart}
+# Implement CART model
+library(rpart)
+library(rpart.plot)
+CARTmodel1 = rpart(log_price ~ bedrooms, data = data_train, cp =0.001)
+prp(CARTmodel1)
+```
+
+9. Making prediction?
+```{r predict}
+set.seed(1)
+trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
+trainingData <- data_train[trainingRowIndex,]
+testData2 <- data_train[-trainingRowIndex,]
+
+predTest <- predict(CARTmodel1, newdata = testData2)
+SSE <- sum((predTest - testData2$log_price)^2)
+SSE
+
+RMSE <- sqrt((mean(predTest - testData2$log_price) ^ 2))
+RMSE
+
+baseline <- mean(data_train$log_price)
+baseline
+
+
+SSEb <- sum((baseline- testData2$log_price) ^ 2)
+SSEb
+
+Rsquared <- 1 - SSE/SSEb
+Rsquared
+```
+
+5. Random Tree Forest? - Not working? 
+```{r RTF, eval = FALSE}
+library(randomForest)
+set.seed(1)
+#RFmodel1 = randomForest(log_price ~ bedrooms + bathrooms + accommodates + room_type, data = testData2, nodesize = 20, ntree = 200)
+RFmodel1 = randomForest(log_price ~ accommodates + bedrooms + bathrooms + room_type, data = testData, nodesize = 20, ntree = 200)
+
+# Make predictions
+predTest = predict(RFmodel1, newdata = testData2)
+# SSE
+SSE = sum((predTest - testData2$log_price)^2)
+SSE
+## [1] 74.71968
+# RMSE
+RMSE = sqrt(mean((predTest - testData2$log_price)^2))
+RMSE
+## [1] 0.3842751
+# Baseline
+baseline = mean(testData2$log_price)
+baseline
+## [1] 5.158113
+# SSE of baseline model on testing set
+SSEb = sum((baseline - testData2$log_price)^2)
+SSEb
+## [1] 210.6516
+# R^2
+Rsquared = 1 - SSE/SSEb
+Rsquared
+## [1] 0.6452926
+
+```
+
+6. ANOVA - to compare categorical data
+```{r anova}
+AOV_res <- summary(aov(log_price ~ factor(property_type) + factor(neighbourhood_cleansed), data = data_train))
 AOV_res
 ```
+Results:
 As we can see, property type and neighborhood do have a significant impact on price since the p-value is much smaller than the significance level.
