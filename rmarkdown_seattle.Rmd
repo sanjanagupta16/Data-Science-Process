@@ -9,7 +9,7 @@ output:
 always_allow_html: yes
 ---
 
-#### GitHub repo - https://github.com/sanjanagupta16/DATA598C-Data-Science-Process
+#### GitHub Repo - 
 
 Importing Libraries and setting cwd
 ```{r libraries}
@@ -32,12 +32,14 @@ library(plotly)
 library(devtools)
 library(kableExtra)
 library(here)
+
 #setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
 #setwd(here("/Data Science Project"))
 ```
 
 Importing data and creating a training dataset
 ```{r import-data}
+
 data1 <- read.csv(file = "data/listings.csv", header = TRUE)
 data2 <- read.csv(file = "data/calendar.csv")
 data3 <- read.csv(file = "data/reviews.csv")
@@ -87,7 +89,14 @@ data_train$require_guest_profile_picture <- NULL
 data_train$require_guest_phone_verification <- NULL
 data_train$summary <- NULL
 data_train$notes <- NULL
-#Down to 69 columns from initial 92
+data_train$space <- NULL
+data_train$description <- NULL
+data_train$transit <- NULL
+data_train$host_since <- NULL
+data_train$host_neighbourhood <- NULL
+data_train$market <- NULL
+data_train$country_code <- NULL
+data_train$is_location_exact <- NULL
 
 rownames(data_train) <- NULL
 
@@ -96,11 +105,15 @@ rownames(data_train) <- NULL
 #summary(data_train$is_location_exact)
 ```
 
-2. Converting Data type for price to numeric
+2. Converting Data type for price and cleaning fee to numeric
 ```{r convert-num}
 data_train$price <- sub("\\$","",data_train$price)
 data_train$price <- sub(",","",data_train$price)
 data_train$price <- as.integer(data_train$price)
+
+data_train$cleaning_fee <- sub("\\$","",data_train$cleaning_fee)
+data_train$cleaning_fee <- sub(",","",data_train$cleaning_fee)
+data_train$cleaning_fee <- as.integer(data_train$cleaning_fee)
 ```
 
 3. Changing data type of categorical variables to factor
@@ -108,7 +121,6 @@ data_train$price <- as.integer(data_train$price)
 data_train$host_response_time <- as.factor(data_train$host_response_time)
 data_train$host_is_superhost <- as.factor(data_train$host_is_superhost)
 data_train$neighbourhood_cleansed <- as.factor(data_train$neighbourhood_cleansed)
-data_train$is_location_exact <- as.factor(data_train$is_location_exact)
 data_train$property_type <- as.factor(data_train$property_type)
 data_train$room_type <- as.factor(data_train$room_type)
 data_train$bed_type <- as.factor(data_train$bed_type)
@@ -130,7 +142,7 @@ data_train$extra_people <- as.numeric(sub("\\$","",data_train$extra_people))
 All Airbnb listings have a price associated with it
 
 6. Removing rows with NA
-```{r echo= FALSE, remove-NA}
+```{r remove-NA}
 #is.null(data_train$zipcode)
 data_train %>% filter_all(all_vars(!is.na(.)))
 data_train %>% filter_all(all_vars(complete.cases(.)))  
@@ -148,9 +160,10 @@ summary_df <- data.frame(summary(data_train))
 #write.csv(summary_df, "summary.csv")
 ```
 
-9. Adding log price column
+9. Adding log price column and log accommodates column --- Transformations
 ```{r log-Price}
 data_train$log_price <- log(data_train$price)
+data_train$log_acc <- log(data_train$accommodates)
 ```
 
 
@@ -166,7 +179,7 @@ NMISS<-data.frame(nmiss=sapply(data_train,check_missing))
 missingdata <- data_train
 missingdata[missingdata == ""] <- NA
 missingdata <- missingdata %>% select(host_is_superhost, review_scores_rating,
-                                      host_response_time, name, host_since, zipcode, latitude,longitude,
+                                      host_response_time, name, zipcode, latitude,longitude,
                                       host_location, host_response_rate,neighbourhood_cleansed,
                                       property_type, price,weekly_price, monthly_price, bedrooms, bathrooms)
 gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data", x = "Attribute")  + theme_bw() + theme(text=element_text(color = "dark blue")) 
@@ -188,9 +201,9 @@ gg_miss_var(missingdata) + labs(title = "Missing Values Plot",y = "Missing Data"
 #In neighborhood group cleansed, there are 794 rows with "Other Neighborhoods"
 #Need to fix this - maybe look at neighorhood cleansed column instead?
 #Looking at categorical data now
-sort(table(data_train$host_neighbourhood), decreasing = TRUE)
-head(subset(data_train, select = 'neighbourhood_group_cleansed'))
-factor(data_train$neighbourhood_group_cleansed)
+sorted <- sort(table(data_train$host_neighbourhood), decreasing = TRUE)
+#head(subset(data_train, select = 'neighbourhood_group_cleansed'))
+fact <- factor(data_train$neighbourhood_group_cleansed)
 count(data_train, 'neighbourhood_group_cleansed')
 count(data_train, 'neighbourhood_cleansed')
 
@@ -202,7 +215,7 @@ neighborhood <- (data_train$neighbourhood_cleansed)
 #x <- sort(count((neighborhood)))
 #arrange(data_train, neighbourhood_cleansed)
 neighborhood_data <- data_train[order(data_train[,21] ),]
-summary(neighborhood_data$neighbourhood_cleansed)
+#summary(neighborhood_data$neighbourhood_cleansed)
 ```
 
 ```{r plot1}
@@ -239,7 +252,7 @@ ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") 
 #plot(data_train$host_is_superhost)
 ```
 
-4. Prices per nNeighborhood
+4. Prices per Neighborhood
 ```{r price-neighborhood}
 z = table(data_train$room_type,data_train$neighbourhood_group)
 kable(z)  %>%
@@ -273,13 +286,7 @@ top_10.val <- table(top_10$neighbourhood_group_cleansed)
 kable(top_10.val)
 ```
 
-7. Creating a variable to find the number of days since the listing has been on Airbnb
-```{r create-var}
-data_train$host_since <- as.Date(data_train$host_since)
-data_train$host_since <- as.Date("2017-05-10")-data_train$host_since
-```
-
-8. Looking at outliers for price
+7. Looking at outliers for price
 ```{r outliers}
 ggplot(data=data_train, aes(price)) + 
   geom_histogram(fill="red") + 
@@ -288,24 +295,27 @@ ggplot(data=data_train, aes(price)) +
 # Percentile of price
 quantile(data_train$price, c(.9, .95, .97, 0.975, 0.98, 0.99, 0.995, 0.999, 0.9999))
 ```
-9. Room Type Analysis
+8. Room Type Analysis
 # For a private room
 ```{r private-room}
 Private_rooms <- data_train %>% filter(room_type == "Private room")
 Private_rooms$price %>% summary()
 ```
+
 # For an entire apartment
+
 ```{r entire-apt}
 entire_house <- data_train %>% filter(room_type == "Entire home/apt")
 entire_house$price %>% summary()
 ```
+
 #Shared room
 ```{r shared-room}
 shared_room <- data_train %>% filter(room_type == "Shared room")
 shared_room$price %>% summary()
 ```
 
-10. Average prices for each room type
+9. Average prices for each room type
 ```{r avg-price}
 listingdf <- read.csv('data/listings.csv')
 zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_review = mean(review_scores_location, na.rm = TRUE))
@@ -316,9 +326,9 @@ colnames(average_price)[2] <- "Average Price"
 print((average_price))
 ```
 
-11. Top 50 most expensive listings
+10. Top 50 most expensive listings
 ```{r patial Data 1.3, echo=FALSE, message=FALSE, warning=FALSE}
-top_df <- data_train %>% top_n(n = 50, wt = price)
+top_df <- data_train %>% top_n(n = 50, wt = log_price)
 
 # get background map
 top_height <- max(top_df$latitude) - min(top_df$latitude)
@@ -330,7 +340,7 @@ top_borders <- c(bottom  = min(top_df$latitude)  - 0.1 * top_height,
 
 top_map <- get_stamenmap(top_borders, zoom = 12, maptype = "toner-lite")
 
-# map of top 50 most expensive
+# map of top 50 most expensive listings
 ggmap(top_map) +
     geom_point(data = top_df, mapping = aes(x = longitude, y = latitude,
                                         col = price)) +
@@ -367,41 +377,57 @@ Clicking on a pin gives you a pop up with some details about the property.
 We can see that most of the listings are clustered around Downtown and Cap Hill.
 
 2. Linear Regression without interaction
+
 Which variables influence price?
-Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type
+Variables selected - bathrooms, price, property type, accomodates, bedrooms, room type, host is superhost, cancellation policy, availability_365, cleaning_fee
+### Added cleaning_fee as a new predictor
 ```{r LR}
-LM_res <- summary(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
-plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed), data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
-LM_res
+LM_model1 <- summary(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost + cancellation_policy + availability_365 +cleaning_fee, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed) + host_is_superhost, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+LM_model1
+#qqnorm(LM_model1$residuals, main = "Normal qq plot of residuals")
 
 ```
 Results:
 
 Private and Shared rooms, accommodates, bedrooms, bathrooms have a significant impact on price.
 So does Property Type = Boat - which is weird.
-R-square is 54%, which is not bad
+R-squared is 60%, which is not bad
 
-3. Taking log(price) with multiple regression:
+
+3. Taking log(price) with multiple linear regression:
+### Added cleaning_fee as a new predictor
 ```{r lR-with-logprice}
-LM_res2 <- summary(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms + property_type, data = data_train))
-plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed), data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
-LM_res2
+LM_model2 <- summary(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost +cancellation_policy + availability_365 + cleaning_fee, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + factor(neighbourhood_cleansed) + host_is_superhost + cancellation_policy + availability_365, data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+LM_model2
 ```
 Results:
-Transforming price to log has a higher R-squared value of 61%. 
+Transforming price to log has a higher R-squared value of 65%. 
 Going forward, using log_price instead price.
 
-4. Linear Regression with interaction
+4. Taking log for accomodates: log-accommodates
+### Added cleaning_fee as a new predictor
+```{r log-acc}
+LM_model3 <- summary(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy, data = data_train))
+plot(price ~room_type + log_acc + bedrooms + bathrooms + property_type + availability_365 + host_is_superhost + cancellation_policy + cleaning_fee, data = data_train) + abline(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms, data = data_train))
+LM_model3
+```
+Using transformation for accommodates column, we get a 66.3% R-squared value. Going forward, using log_accommodates.
+
+5. Linear Regression with interaction
+### Added cleaning_fee as a new predictor
 ```{r LR-interacion}
-LM_res3 <- summary(lm(formula = log_price ~ room_type * accommodates * bedrooms + bathrooms * property_type, data = data_train))
-plot(log_price ~room_type * accommodates * bedrooms * bathrooms * property_type, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
-LM_res3
+LM_model4 <- summary(lm(formula = log_price ~ room_type * log_acc * bedrooms + bathrooms * property_type * cancellation_policy * availability_365 * cleaning_fee, data = data_train))
+plot(log_price ~room_type * log_acc * bedrooms * bathrooms * property_type,data = data_train) + abline(lm(formula = price ~ room_type + log_acc + bedrooms + bathrooms, data = data_train))
+LM_model4
 
 ```
 Results:
-R-square is at 62%. 
+R-squared is at 69.35%. 
 
-5. Pairwise comparison
+6. Pairwise comparison
+
 ```{r pairwise}
 # price vs bathrooms
 p1 <- ggplot(data_train, aes(x=bathrooms, y=log_price)) +
@@ -410,7 +436,7 @@ p1 <- ggplot(data_train, aes(x=bathrooms, y=log_price)) +
   ylab("price")
 
 # price vs accommodates
-p2 <- ggplot(data_train, aes(x=accommodates, y=log_price)) +
+p2 <- ggplot(data_train, aes(x=log_acc, y=log_price)) +
   geom_point(colour = "orange", size = 1.5) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
@@ -427,106 +453,264 @@ p4 <- ggplot(data_train, aes(x=room_type, y=log_price)) +
   geom_smooth(method='lm', color='red') +
   ylab("price")
 
+#price vs host_is_superhost
+p5 <- ggplot(data_train, aes(x=host_is_superhost, y=log_price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
+
+p6 <- ggplot(data_train, aes(x=cancellation_policy, y=log_price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
+
+p7 <- ggplot(data_train, aes(x=cleaning_fee, y=log_price)) +
+  geom_point(colour = "orange", size = 1.5) +
+  geom_smooth(method='lm', color='red') +
+  ylab("price")
+
 # combining all plots
-grid.arrange(p1, p2, p3, p4,ncol = 2)
+grid.arrange(p1, p2, p3, p4,p5,p6, p7, ncol = 2)
 ```
 
-6. Predicting Price using Linear Regression Model
+7. Preparing test and train data 
+```{r}
+library(caTools)
+data_train <- data_train %>% drop_na(log_price) %>% drop_na(log_acc) %>% drop_na(bedrooms) %>% drop_na(bathrooms) %>% drop_na(room_type) %>% drop_na(host_is_superhost) %>% drop_na(cancellation_policy) %>% drop_na(availability_365) %>% drop_na(cleaning_fee)
+
+sample_size <- floor(0.75 * nrow(data_train))
+
+set.seed(1)
+train_ind <- sample(seq_len(nrow(data_train)), size = sample_size)
+train <- data_train[train_ind,]
+test <- data_train[-train_ind,]
+```
+
+
+8. Predicting Price using Linear Regression Model
+### Added cleaning_fee as a new predictor
 ```{r predict-price}
 set.seed(100)
-trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
-trainingData <- data_train[trainingRowIndex,]
-testData <- data_train[-trainingRowIndex,]
-lm_model <- lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = trainingData)
-price_pred <- predict(lm_model, testData)
+#trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
+#trainingData <- data_train[trainingRowIndex,]
+#testData <- data_train[-trainingRowIndex,]
+
+lm_model <- lm(formula = log_price ~ room_type * log_acc * bedrooms * bathrooms * host_is_superhost * cancellation_policy * availability_365 * cleaning_fee, data = train)
+price_pred <- predict(lm_model, test)
 
 summary(lm_model)
 
-actual_pred <- data.frame(cbind(actuals = testData$log_price, predicteds = price_pred))
-correlation_accuracy <- cor(actual_pred)
+LM_pred <- data.frame(cbind(Actual = test$log_price, Predicted= price_pred))
+correlation_accuracy <- cor(LM_pred)
 
-head(actual_pred)
+head(LM_pred)
+correlation_accuracy
+plot(lm_model)
+
+#ggplot(data = testData, aes(x = actual_pred$Actual, y = actual_pred$Predicted)) +
+#geom_point() +
+#stat_smooth(method = "lm", col = "dodgerblue3") +
+#theme(panel.background = element_rect(fill = "white"),
+#axis.line.x=element_line(),
+#axis.line.y=element_line()) +
+#ggtitle("Linear Model Fitted to Data") + ylab("Predicted") + xlab("Actuals")
 ```
+R-squared value of 65.34%.
+Update: R-squared value is 74%.
 
-7. Correlation matrix
+9. Correlation matrix
+### Added cleaning_fee as a new predictor
 ```{r corr}
-data.corr <- data_train %>% filter(!is.na(accommodates)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>%
-  select(log_price, price, bedrooms, bathrooms, accommodates)
+data.corr <- data_train %>% filter(!is.na(log_acc)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>% filter(!is.na(availability_365)) %>% filter(!is.na(cleaning_fee)) %>%
+  select(log_price, price, bedrooms, bathrooms, log_acc, availability_365, cleaning_fee)
 kable(cor(data.corr)) %>% kable_styling()
 ```
-Bedrooms, bathrooms and accommodates have a correlation with price.
+Bedrooms, bathrooms and log_accommodate, cleaning fee have a correlation with log price but not a strong one.
 
 
-8. Create a CART model
-```{r Cart}
+10. Create a CART model - with log price and bedroom
+```{r Cart1}
 # Implement CART model
 library(rpart)
 library(rpart.plot)
-CARTmodel1 = rpart(log_price ~ bedrooms, data = data_train, cp =0.001)
+CARTmodel1 = rpart(log_price ~ bedrooms, data = train, cp =0.001)
 prp(CARTmodel1)
 ```
+Making predictions
 
-9. Making prediction?
-```{r predict}
-set.seed(1)
-trainingRowIndex <- sample(1:nrow(data_train), 0.8 *nrow(data_train))
-trainingData <- data_train[trainingRowIndex,]
-testData2 <- data_train[-trainingRowIndex,]
-
-predTest <- predict(CARTmodel1, newdata = testData2)
-SSE <- sum((predTest - testData2$log_price)^2)
-SSE
-
-RMSE <- sqrt((mean(predTest - testData2$log_price) ^ 2))
-RMSE
-
-baseline <- mean(data_train$log_price)
-baseline
-
-
-SSEb <- sum((baseline- testData2$log_price) ^ 2)
-SSEb
-
-Rsquared <- 1 - SSE/SSEb
-Rsquared
-```
-
-5. Random Tree Forest? - Not working? 
-```{r RTF, eval = FALSE}
-library(randomForest)
-set.seed(1)
-#RFmodel1 = randomForest(log_price ~ bedrooms + bathrooms + accommodates + room_type, data = testData2, nodesize = 20, ntree = 200)
-RFmodel1 = randomForest(log_price ~ accommodates + bedrooms + bathrooms + room_type, data = testData, nodesize = 20, ntree = 200)
-
+```{r pred1}
 # Make predictions
-predTest = predict(RFmodel1, newdata = testData2)
-# SSE
-SSE = sum((predTest - testData2$log_price)^2)
-SSE
-## [1] 74.71968
+predTest = predict(CARTmodel1, newdata = test)
+
+#SSE
+SSE = sum((predTest - test$log_price)^2)
+cat("SSE = ",SSE)
 # RMSE
-RMSE = sqrt(mean((predTest - testData2$log_price)^2))
-RMSE
-## [1] 0.3842751
+RMSE = sqrt(mean((predTest - test$log_price)^2))
+cat("\nRMSE = ",RMSE)
+
 # Baseline
-baseline = mean(testData2$log_price)
-baseline
-## [1] 5.158113
+baseline = mean(train$log_price)
+cat("\nbaseline = ",baseline)
+
 # SSE of baseline model on testing set
-SSEb = sum((baseline - testData2$log_price)^2)
-SSEb
-## [1] 210.6516
+SSEb = sum((baseline - test$log_price)^2)
+cat("\nSSEb = ", SSEb)
+
 # R^2
 Rsquared = 1 - SSE/SSEb
-Rsquared
-## [1] 0.6452926
+cat("\nR squared = ",Rsquared)
+```
+11. Creating CART model to predict log(price) using variables: log(acc), bedrooms, bathrooms, room_type, host_is_superhost, cancellation_policy, cleaning_fee, availability_365
+### Added cleaning_fee as a new predictor
+
+```{r}
+CARTmodel2 = rpart(log_price ~ log_acc + bedrooms + bathrooms + room_type + host_is_superhost + cancellation_policy + availability_365 + cleaning_fee, data = train, cp =0.001)
+prp(CARTmodel2)
+```
+Make predictions:
+
+```{r}
+# Make predictions
+predTest = predict(CARTmodel2, newdata = test)
+
+#head(predTest)
+
+#SSE
+SSE = sum((predTest - test$log_price)^2)
+cat("SSE = ",SSE)
+# RMSE
+RMSE = sqrt(mean((predTest - test$log_price)^2))
+cat("\nRMSE = ",RMSE)
+
+# Baseline
+baseline = mean(train$log_price)
+cat("\nbaseline = ",baseline)
+
+# SSE of baseline model on testing set
+SSEb = sum((baseline - test$log_price)^2)
+cat("\nSSEb = ", SSEb)
+
+# R^2
+Rsquared = 1 - SSE/SSEb
+cat("\nR squared = ",Rsquared)
+```
+
+5. Random Forest
+### Added cleaning_fee as a new predictor
+```{r RTF}
+library(randomForest)
+library(party)
+
+set.seed(1)
+
+RFmodel1 <- randomForest(formula = log_price ~ log_acc + bedrooms + bathrooms +room_type + property_type + host_is_superhost + cancellation_policy + availability_365 + cleaning_fee, data=train, nodesize = 100, ntree = 1000, mtry = 2, importance = TRUE, na.action = na.omit)
+
+RFmodel1
+#getTree(RFmodel1, 1)
+#plot(RFmodel1)
+
+round(importance(RFmodel1),2)
+```
+
+6. Using Random Forest to make predictions
+### Added cleaning_fee as a new predictor
+```{r predict}
+# Make predictions
+predTest <- predict(RFmodel1, newdata = test, type = "response")
+
+RT_pred <- data.frame(cbind(Actual = test$log_price, Predicted= predTest))
+
+RT_pred
+```
+
+7. Parameters for Random Forest 
+
+````{r}
+# SSE
+SSE = sum((predTest - test$log_price)^2)
+cat("SSE = ",SSE)
+
+# RMSE
+RMSE = sqrt(mean((predTest - test$log_price)^2))
+cat("\nRMSE = ",RMSE)
+
+# Baseline
+baseline = mean(test$log_price)
+cat("\nBaseline = ",baseline)
+
+# SSE of baseline model on testing set
+SSEb = sum((baseline - test$log_price)^2)
+cat("\nSSEb = ",SSEb)
+
+# R^2
+Rsquared = 1 - SSE/SSEb
+cat("\nRsquared = ",Rsquared)
+```
+Random Tree Forest model gives the highest R-squared value of 66%.
+
+6. Parameter Tuning - Grid Search
+```{r}
+library(mlbench)
+library(caret)
+library(e1071)
+
+set.seed(1)
+
+trControl <- trainControl(method = "cv", number = 10, search = "grid")
+rf_default <- train(log_price ~ log_acc + bedrooms + bathrooms + room_type + property_type + host_is_superhost + cancellation_policy + cleaning_fee, data = train, method = "rf", metric = "Rsquared", trControl = trControl)
+print(rf_default)
 
 ```
 
-6. ANOVA - to compare categorical data
+7. ANOVA - to compare categorical data
 ```{r anova}
 AOV_res <- summary(aov(log_price ~ factor(property_type) + factor(neighbourhood_cleansed), data = data_train))
 AOV_res
 ```
 Results:
 As we can see, property type and neighborhood do have a significant impact on price since the p-value is much smaller than the significance level.
+
+8. GLM
+
+```{r glm}
+glm_1 <- glm(log_price ~ log_acc + bedrooms + bathrooms + room_type + host_is_superhost + cancellation_policy + cleaning_fee, data = data_train, family = gaussian(link  = "log"))
+summary(glm_1)
+glm_1$coeff
+```
+
+## Model Evaluation
+```{r}
+hist(LM_pred)
+hist(RT_pred)
+```
+
+Model is evaluated based on R-squared value i.e. % of variablility explained by the model.
+Predicting price on:
+1. Linear Regression with interaction has an R-squared value of 69.35%.
+### Update: Linear Regression w/ interaction has an R-squared value of 74%.
+2. Random Tree Forest has an R-square value of 66%.
+Based on this, Linear Regression with interaction wins.
+
+## Utility Function
+1. For Linear Regression
+```{r util-LR}
+LM_pred$diff <- LM_pred$Actual - LM_pred$Predicted
+diff <- sum(LM_pred$diff)
+head(LM_pred)
+cat("Sum of diff = ", diff)
+```
+A profit of $9.42 for this model.
+### Update: Profit of $2454 is predicted by using a linear regression w/ interaction model.
+
+2. Random Tree Forest
+```{r util-R}
+RT_pred$diff <- RT_pred$Actual - RT_pred$Predicted
+diff2 <- sum(RT_pred$diff)
+
+head(RT_pred)
+cat("\n Diff = ",diff2)
+```
+Based on this model, a profit of $7.14 can be made.
+
+Linear Regression wins.
