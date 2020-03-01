@@ -81,7 +81,7 @@ As a part of feature engineering, 2 variables were log transformed - Price and A
 
 The data was also partitioned into training and test data.
 
-For Property_type, since a lot of categories contained very few listings, they were changed to "Other" category.
+For Property Type, since a lot of categories contained very few listings, they were changed to "Other" category.
 
 ## Model Selection
 
