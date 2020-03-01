@@ -1,11 +1,3 @@
----
-title: "Price Prediction for Seattle's Airbnb Listings"
-author: "Sanjana Gupta"
-output:
-  prettydoc::html_pretty:
-    theme: cayman
-    highlight: github
----
 # DATA 598C-Data-Science-Process
 
 This is the project done for the Data 598C course at University of Washington. 
