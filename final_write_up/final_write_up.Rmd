@@ -147,12 +147,14 @@ Based on this, the linear regression model wins.
 
 
 ## Model Evaluation
-The models were evaluated based on a utility function created - 
+The models were evaluated based on a utility function created that calculates.
 
 ## Recommendation
 
 ## Future Scope
 Look at how amentities influence price.
+
+Remove outliers from price and fit and assess all the models again.
 
 Apply more models - XGBoost, Neural Networks.
 
