@@ -426,7 +426,7 @@ Predictor variables selected - bathrooms, price, property type, accomodates, bed
 ```{r LR}
 LM_model1 <- summary(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost + cancellation_policy + availability_365 +cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train))
 
-#plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed) + host_is_superhost, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed) + host_is_superhost, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_model1
 #qqnorm(LM_model1$residuals, main = "Normal qq plot of residuals")
 
@@ -452,7 +452,7 @@ R-squared is 61.99%, which is not bad
 ```{r lR-with-logprice}
 LM_model2 <- summary(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost +cancellation_policy + availability_365 + cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train))
 
-#plot(price ~room_type + accommodates + bedrooms + bathrooms + factor(neighbourhood_cleansed) + host_is_superhost + cancellation_policy + availability_365, data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
+plot(price ~room_type + accommodates + bedrooms + bathrooms + factor(neighbourhood_cleansed) + host_is_superhost + cancellation_policy + availability_365, data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_model2
 ```
 Results:
@@ -477,7 +477,8 @@ The R-squared metric is 68.68%.
 3. Taking log for accomodates: log-accommodates
 ```{r log-acc}
 LM_model3 <- summary(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews + availability_365, data = data_train))
-#plot(price ~room_type + log_acc + bedrooms + bathrooms + property_type + availability_365 + host_is_superhost + cancellation_policy + cleaning_fee + extra_people, data = data_train) + abline(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms, data = data_train))
+
+plot(price ~room_type + log_acc + bedrooms + bathrooms + property_type + availability_365 + host_is_superhost + cancellation_policy + cleaning_fee + extra_people, data = data_train) + abline(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms, data = data_train))
 LM_model3
 ```
 Results:
@@ -596,6 +597,7 @@ set.seed(100)
 #testData <- data_train[-trainingRowIndex,]
 
 lm_model <- lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews + availability_365, data = train)
+
 price_pred <- predict(lm_model, test)
 
 summary(lm_model)
@@ -619,12 +621,11 @@ Update: R-squared value is 69.82%.
 
 7. Correlation matrix
 ```{r corr}
-data.corr <- data_train %>% filter(!is.na(log_acc)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>% filter(!is.na(availability_365)) %>% filter(!is.na(cleaning_fee)) %>% filter(!is.na(extra_people)) %>% filter(!is.na(security_deposit)) %>% filter(!is.na(maximum_nights)) %>% filter(!is.na(minimum_nights)) %>% filter(!is.na(latitude)) %>% filter(!is.na(longitude)) %>% filter(!is.na(number_of_reviews))
+data.corr <- data_train %>% filter(!is.na(log_acc)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>% filter(!is.na(availability_365)) %>% filter(!is.na(cleaning_fee)) %>% filter(!is.na(extra_people)) %>% filter(!is.na(security_deposit)) %>% filter(!is.na(maximum_nights)) %>% filter(!is.na(minimum_nights)) %>% filter(!is.na(latitude)) %>% filter(!is.na(longitude)) %>% filter(!is.na(number_of_reviews)) %>%
   select(log_price, price, bedrooms, bathrooms, log_acc, availability_365, cleaning_fee, security_deposit, maximum_nights, minimum_nights, extra_people, latitude, longitude, number_of_reviews)
 kable(cor(data.corr)) %>% kable_styling()
 ```
 There is some correlation between the variables, but not strong enough to worry about multicollinearity.
-
 
 #### Decision Trees
 1. Create a CART model - with log price and bedroom
@@ -639,13 +640,13 @@ prp(CARTmodel1)
 2. Making predictions
 ```{r pred1}
 # Make predictions
-predTest = predict(CARTmodel1, newdata = test)
+predDT = predict(CARTmodel1, newdata = test)
 
 #SSE
-SSE = sum((predTest - test$log_price)^2)
+SSE = sum((predDT - test$log_price)^2)
 cat("SSE = ",SSE)
 # RMSE
-RMSE = sqrt(mean((predTest - test$log_price)^2))
+RMSE = sqrt(mean((predDT - test$log_price)^2))
 cat("\nRMSE = ",RMSE)
 
 # Baseline
@@ -659,6 +660,11 @@ cat("\nSSEb = ", SSEb)
 # R^2
 Rsquared = 1 - SSE/SSEb
 cat("\nR squared = ",Rsquared)
+
+#Actual vs Predicted
+DT_pred <- data.frame(cbind(Actual = test$log_price, Predicted = predDT))
+head(DT_pred)
+
 ```
 
 3. Creating CART model to predict log(price) using variables: log(acc), bedrooms, bathrooms, room_type, host_is_superhost, cancellation_policy, cleaning_fee, availability_365, 
@@ -671,15 +677,15 @@ prp(CARTmodel2)
 4. Make predictions:
 ```{r}
 # Make predictions
-predTest = predict(CARTmodel2, newdata = test)
+predDT2 = predict(CARTmodel2, newdata = test)
 
 #head(predTest)
 
 #SSE
-SSE = sum((predTest - test$log_price)^2)
+SSE = sum((predDT2 - test$log_price)^2)
 cat("SSE = ",SSE)
 # RMSE
-RMSE = sqrt(mean((predTest - test$log_price)^2))
+RMSE = sqrt(mean((predDT2 - test$log_price)^2))
 cat("\nRMSE = ",RMSE)
 
 # Baseline
@@ -693,6 +699,12 @@ cat("\nSSEb = ", SSEb)
 # R^2
 Rsquared = 1 - SSE/SSEb
 cat("\nR squared = ",Rsquared)
+
+#Actual vs Predicted
+DT_pred2 <- data.frame(cbind(Actual = test$log_price, Predicted = predDT2))
+head(DT_pred2)
+plot(DT_pred2)
+
 ```
 Using Decision Trees, R-squared value is 61.69%.
 
@@ -975,6 +987,7 @@ plot(glm_model)
 
 
 ```
+Using the mcFadden Pseudo R-squared parameter, we get an R-squared value of 68%.
 
 ## Model Evaluation
 ```{r}
@@ -986,10 +999,11 @@ hist(RT_pred)
 Model is evaluated based on R-squared value i.e. % of variablility explained by the model.
 Predicting price on:
 1. Linear Regression has an R-squared value of 69.82%.
-2. Decision Trees have an R-squared value of  
+2. Decision Trees have an R-squared value of  61.69%
 3. Random Tree Forest has an R-square value of 66.94%.
-4. GLM has an R-squared value of 
-Based on this, Linear Regression with interaction wins.
+4. GLM has an R-squared value of 68%.
+
+Based on this, Linear Regression wins.
 
 ## Utility Function
 1. For Linear Regression
@@ -999,10 +1013,20 @@ diff <- sum(LM_pred$diff)
 head(LM_pred)
 cat("Sum of diff = ", diff)
 ```
-A loss of $6.6 is predicted with linear regression
+A loss of $6.6 is predicted with linear regression.
 
-2. Random Tree Forest
-```{r util-R}
+2. Decision Trees
+```{r util-DT}
+
+DT_pred2$diff <- DT_pred2$Actual - DT_pred2$Predicted
+diff2 <- sum(DT_pred2$diff)
+head(DT_pred2)
+cat("/n Diff = ", diff2)
+```
+
+
+3. Random Tree Forest
+```{r util-RTF}
 RT_pred2$diff <- RT_pred2$Actual - RT_pred2$Predicted
 diff2 <- sum(RT_pred2$diff)
 
@@ -1011,8 +1035,8 @@ cat("\n Diff = ",diff2)
 ```
 A loss of $7.5 predicted
 
-3. GLM
-```{r}
+4. GLM
+```{r util-GLM}
 GLM_pred$diff <- GLM_pred$Actual - GLM_pred$Predicted
 diff <- sum(GLM_pred$diff)
 head(GLM_pred)
