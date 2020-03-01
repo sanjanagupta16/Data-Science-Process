@@ -94,14 +94,36 @@ The following models were selected:
 
 1. Linear Regression
 Different linear regression models were applied. The response variable is price. 
-The predictor variables considered are: 
-- Base Linear Regression - 
+
+The predictor variables considered are: accommodates, bedrooms, bathrooms, room type, property type, host is superhost, cancellation policy, availability, cleaning fee, extra people, location (lat/long), minimum nights, maximum nights, instant bookable, bed type and number of reviews.
+
+A correlation matrix was also built to check if any of the variables used were highly correlated. There was some correlation found, but it was not strong enough to worry multicollinearity.
+
+- The initial linear regression model was fitted with the predictor variables mentioned above with price as response. 
+
+- The second linear regression model was fitted with the predictor variables mentioned above with log price as response. This was a better fit than the previous model.
+
+- The next linear regresion model was fitted with the predictor variables mentioned above using log accommodates instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.
 
 2. Decision Trees
 
+- As a baseline, a decision tree was created using bedrooms to predict the log price.
+
+- Final decision tree was created using the same set of predictor variables used in the linear regression model to predict log price. This was found to be the best fit for decision tree.
+
 3. Random Tree Forest
 
+- The baseline model was fitted using the same set of predictor variables were used to predict log price with mtry = 8.
+
+- On tuning the parameters, mtry = 17 was used to the best fit for this model. 
+
 4. Generalized Linear Model
+
+- The same set of predictor variables were used to predict log price using a Gaussian model. 
+
+5 ANOVA
+
+This was done to check if the categorical values - neighborhood and property type have any significance on price.
 
 ## Model Training and Assessment
 A test and train data was prepared where 75% of the data was split into train, and the remaining 25% of the data was used for test.
@@ -109,8 +131,20 @@ This was accomplished using an R package - caTools.
 
 There was no hyperparameter tuning done for Linear Regression, Decision Trees and Generalized Linear Model.
 
-For Random Tree, hyperparameter tuning was performed on "mtry". 
+For Random Tree, hyperparameter tuning was performed on "mtry" using Grid Search. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.
+
 All models were assessed on the same parameter - R^2 value.
+
+* For the linear regression model, R^2 value was found to be 69.82%.
+
+* Using Decision Trees, the R^2 value was found to be 61.69%.
+
+* Using a Random Tree Forest model, the R^2 value was found to be 66.94%.
+
+* Using a Generalized Linear Model, the R^2 value was found to be 68%.
+
+Based on this, the linear regression model wins.
+
 
 ## Model Evaluation
 The models were evaluated based on a utility function created - 
@@ -119,9 +153,11 @@ The models were evaluated based on a utility function created -
 
 ## Future Scope
 Look at how amentities influence price.
-Apply more models - XGBoost, Neural Network
+
+Apply more models - XGBoost, Neural Networks.
+
 Look at more goodness of fit metrics - RMSE, MAE.
 
-
 ## Code
+The rmarkdown file can be found here - https://github.com/sanjanagupta16/Data-Science-Process/blob/master/rmarkdown_seattle.Rmd
  
