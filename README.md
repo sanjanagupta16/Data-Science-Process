@@ -3,16 +3,16 @@
 This is the project done for the Data 598C course at University of Washington. 
 
 ## Problem Statement
-Aitbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests. 
+Airbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests. 
 
-Hosts are expected to set their own prices for their listings. Although there are general guidances provided by Airbnb, there isn't an easy way to determine the best price to rent out a listing. Since the market is competititve, it's important for the hosts to set an optimal nightly price for their properties. Using a calculated average price would not be ideal since the price of a property depends on several listing features.
+Hosts are expected to set their own prices for their listings. Although there are general guidances provided by Airbnb, there isn't an easy way to determine the best price to rent out a listing. Since the market is competitive, it's important for the hosts to set an optimal nightly price for their properties. Using a calculated average price would not be ideal since the price of a property depends on several listing features.
 
-The purpose of this project to predict the base price for properties in Seattle based on these features. This is done by first analysing features that can impact the price, and then building a prediction model for the same.
+The purpose of this project to predict the base price for properties in Seattle based on these features. This is done by first analyzing features that can impact the price, and then building a prediction model for the same.
 
 ## Data
-The dataset used for this project comes from Kaggle's Seattle Airbnb Open Data which was scraped on 25th June, 2018.
+The data set used for this project comes from Kaggle's Seattle Airbnb Open Data which was scraped on 25th June, 2018.
 
-The dataset can be found here - [data](https://www.kaggle.com/airbnb/seattle).
+The data set can be found here - [data](https://www.kaggle.com/airbnb/seattle).
 This data contains information about the following:
 
 1. All Seattle listings: close to 4000 entries with 92 features.
@@ -21,7 +21,7 @@ This data contains information about the following:
 
 3. Reviews data: which contains the listing ID along with  detailed review/comment.
 
-For the purpose of this project, only the listings dataset is used to build the prediction model.
+For the purpose of this project, only the listings data set is used to build the prediction model.
 
 ## Data Cleaning/Processing
 
@@ -67,13 +67,13 @@ As a part of data cleaning and processing, the following conversions took place:
 
 * Price variables (with $) converted to numeric to remove $ - price, cleaning_fee, extra_people, security_deposit
 
-* Categorical Variables converted to factor - response_time, host_is_superhost, neighbourhood_cleansed, property_type, room_type, bed_type, calendar_updated, cancellation_policy, instant_bookable, bed_type
+* Categorical Variables converted to factor - response_time, host_is_superhost, neighborhood_cleansed, property_type, room_type, bed_type, calendar_updated, cancellation_policy, instant_bookable, bed_type
 
 * Character variables converted to numeric - response_rate, acceptance rate
 
 All rows with NA's and null values were also removed.
 
-Most of the free text variables like - host description, summary, written reviews, scrape ID, neighborhood overview, notes, transit, url, host_about were dropped since this would require NLP.
+Most of the free text variables like - host description, summary, written reviews, scrape ID, neighborhood overview, notes, transit, URL, host_about were dropped since this would require Natural Language Processing.
 
 ## Feature Engineering
 
@@ -81,7 +81,7 @@ As a part of feature engineering, 2 variables were log transformed - Price and A
 
 The data was also partitioned into training and test data.
 
-For Property Type, since a lot of categories contained very few listings, they were changed to "Other" category.
+For Property_type, since a lot of categories contained very few listings, they were changed to "Other" category.
 
 ## Model Selection
 
@@ -98,7 +98,7 @@ A correlation matrix was also built to check if any of the variables used were h
 
 - The second linear regression model was fitted with the predictor variables mentioned above with log price as response. This was a better fit than the previous model.
 
-- The next linear regresion model was fitted with the predictor variables mentioned above using log accommodates instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.
+- The next linear regression model was fitted with the predictor variables mentioned above using log accommodates instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.
 
 2. Decision Trees
 
@@ -118,15 +118,17 @@ A correlation matrix was also built to check if any of the variables used were h
 
 5 ANOVA
 
+- Using ANOVA, property type and neighborhood were found to significant.
+
 This was done to check if the categorical values - neighborhood and property type have any significance on price.
 
 ## Model Training and Assessment
 A test and train data was prepared where 75% of the data was split into train, and the remaining 25% of the data was used for test.
 This was accomplished using an R package - caTools.
 
-There was no hyperparameter tuning done for Linear Regression, Decision Trees and Generalized Linear Model.
+There was no hyper parameter tuning done for Linear Regression, Decision Trees and Generalized Linear Model.
 
-For Random Tree, hyperparameter tuning was performed on "mtry" using Grid Search. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.
+For Random Tree, hyper parameter tuning was performed on "mtry" using Grid Search. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.
 
 All models were assessed on the same parameter - R^2 value.
 
@@ -140,19 +142,25 @@ All models were assessed on the same parameter - R^2 value.
 
 Based on this, the linear regression model wins.
 
-
 ## Model Evaluation
-The models were evaluated based on a utility function created - 
+The models were evaluated based on a utility function created that calculates the profit predicted using each model. This utility function sums up the difference between Actual and Predicted values. Linear Regression wins based on this.
 
 ## Recommendation
+Currently, the linear regression model performs better compared to the other models. There are a few more features that can be looked into to see if they influence price - 
 
-## Future Scope
-Look at how amentities influence price.
+* Amenities
 
-Apply more models - XGBoost, Neural Networks.
+* Reviews and Review Ratings (reviews data) - this would require sentiment analysis.
 
-Look at more goodness of fit metrics - RMSE, MAE.
+* Seasonality data (calendar data)
+
+Models should also be assessed on other goodness of fit metrics like RMSE and MAE.
+
+Some more feature engineering could be done to calculate the proximity to airports, light rail station etc.
+
+It might also be worthwhile to look at the outliers for price and either cap them at a threshold or removing them to build a better prediction model.
+
+Modeling techniques like XGBoost, Support Vector Regression, Neural Networks can also be applied.
 
 ## Code
-The rmarkdown file can be found here - https://github.com/sanjanagupta16/Data-Science-Process/blob/master/rmarkdown_seattle.Rmd
- 
+The markdown file can be found here - https://github.com/sanjanagupta16/Data-Science-Process/blob/master/markdown_Seattle.Rmd
