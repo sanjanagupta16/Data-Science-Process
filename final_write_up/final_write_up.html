@@ -54,30 +54,30 @@ code span.ot { color: #007020; }
 <section class="main-content">
 <div id="problem-statement" class="section level2">
 <h2>Problem Statement</h2>
-<p>Aitbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests.</p>
-<p>Hosts are expected to set their own prices for their listings. Although there are general guidances provided by Airbnb, there isn’t an easy way to determine the best price to rent out a listing. Since the market is competititve, it’s important for the hosts to set an optimal nightly price for their properties. Using a calculated average price would not be ideal since the price of a property depends on several listing features.</p>
-<p>The purpose of this project to predict the base price for properties in Seattle based on these features. This is done by first analysing features that can impact the price, and then building a prediction model for the same.</p>
+<p>Airbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests.</p>
+<p>Hosts are expected to set their own prices for their listings. Although there are general guidances provided by Airbnb, there isn’t an easy way to determine the best price to rent out a listing. Since the market is competitive, it’s important for the hosts to set an optimal nightly price for their properties. Using a calculated average price would not be ideal since the price of a property depends on several listing features.</p>
+<p>The purpose of this project to predict the base price for properties in Seattle based on these features. This is done by first analyzing features that can impact the price, and then building a prediction model for the same.</p>
 </div>
 <div id="data" class="section level2">
 <h2>Data</h2>
-<p>The dataset used for this project comes from Kaggle’s Seattle Airbnb Open Data which was scraped on 25th June, 2018.</p>
-<p>The dataset can be found here - <a href="https://www.kaggle.com/airbnb/seattle">data</a>. This data contains information about the following:</p>
+<p>The data set used for this project comes from Kaggle’s Seattle Airbnb Open Data which was scraped on 25th June, 2018.</p>
+<p>The data set can be found here - <a href="https://www.kaggle.com/airbnb/seattle">data</a>. This data contains information about the following:</p>
 <ol style="list-style-type: decimal">
 <li><p>All Seattle listings: close to 4000 entries with 92 features.</p></li>
 <li><p>Calendar data: contains listing ID, price and availability for that day.</p></li>
 <li><p>Reviews data: which contains the listing ID along with detailed review/comment.</p></li>
 </ol>
-<p>For the purpose of this project, only the listings dataset is used to build the prediction model.</p>
+<p>For the purpose of this project, only the listings data set is used to build the prediction model.</p>
 </div>
 <div id="data-cleaningprocessing" class="section level2">
 <h2>Data Cleaning/Processing</h2>
-<p>As a part of data cleaning, the following features were considered to be important features:</p>
+<p>Some of the important features this project will look into are the following:</p>
 <ul>
-<li><p>Price</p></li>
-<li><p>Accommodates: the number of people that the listing accommodates</p></li>
+<li><p>Price: nightly price for each listing</p></li>
+<li><p>Accommodates: the number of guests that the listing accommodates</p></li>
 <li><p>Room Type: Private room/Shared Room/Entire apartment</p></li>
-<li><p>Number of Bedrooms</p></li>
-<li><p>Number of Bathrooms</p></li>
+<li><p>Number of Bedrooms included in the listing</p></li>
+<li><p>Number of Bathrooms included in the listing</p></li>
 <li><p>Property Type: House/Apartment/Bungalow/Dorm</p></li>
 <li><p>Whether or not a host is a superhost</p></li>
 <li><p>Type of Cancellation Policy - Strict/Moderate/Flexible</p></li>
@@ -95,10 +95,11 @@ code span.ot { color: #007020; }
 <p>As a part of data cleaning and processing, the following conversions took place:</p>
 <ul>
 <li><p>Price variables (with $) converted to numeric to remove $ - price, cleaning_fee, extra_people, security_deposit</p></li>
-<li><p>Categorical Variables converted to factor - response_time, host_is_superhost, neighbourhood_cleansed, property_type, room_type, bed_type, calendar_updated, cancellation_policy, instant_bookable, bed_type</p></li>
+<li><p>Categorical Variables converted to factor - response_time, host_is_superhost, neighborhood_cleansed, property_type, room_type, bed_type, calendar_updated, cancellation_policy, instant_bookable, bed_type</p></li>
 <li><p>Character variables converted to numeric - response_rate, acceptance rate</p></li>
 </ul>
 <p>All rows with NA’s and null values were also removed.</p>
+<p>Most of the free text variables like - host description, summary, written reviews, scrape ID, neighborhood overview, notes, transit, URL, host_about were dropped since this would require Natural Language Processing.</p>
 </div>
 <div id="feature-engineering" class="section level2">
 <h2>Feature Engineering</h2>
@@ -110,29 +111,75 @@ code span.ot { color: #007020; }
 <h2>Model Selection</h2>
 <p>The following models were selected:</p>
 <ol style="list-style-type: decimal">
-<li><p>Linear Regression</p></li>
-<li><p>Decision Trees</p></li>
-<li><p>Random Tree Forest</p></li>
-<li><p>Generalized Linear Model</p></li>
+<li>Linear Regression Different linear regression models were applied. The response variable is price.</li>
 </ol>
+<p>The predictor variables considered are: accommodates, bedrooms, bathrooms, room type, property type, host is superhost, cancellation policy, availability, cleaning fee, extra people, location (lat/long), minimum nights, maximum nights, instant bookable, bed type and number of reviews.</p>
+<p>A correlation matrix was also built to check if any of the variables used were highly correlated. There was some correlation found, but it was not strong enough to worry multicollinearity.</p>
+<ul>
+<li><p>The initial linear regression model was fitted with the predictor variables mentioned above with price as response.</p></li>
+<li><p>The second linear regression model was fitted with the predictor variables mentioned above with log price as response. This was a better fit than the previous model.</p></li>
+<li><p>The next linear regression model was fitted with the predictor variables mentioned above using log accommodates instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.</p></li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Decision Trees</li>
+</ol>
+<ul>
+<li><p>As a baseline, a decision tree was created using bedrooms to predict the log price.</p></li>
+<li><p>Final decision tree was created using the same set of predictor variables used in the linear regression model to predict log price. This was found to be the best fit for decision tree.</p></li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>Random Tree Forest</li>
+</ol>
+<ul>
+<li><p>The baseline model was fitted using the same set of predictor variables were used to predict log price with mtry = 8.</p></li>
+<li><p>On tuning the parameters, mtry = 17 was used to the best fit for this model.</p></li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>Generalized Linear Model</li>
+</ol>
+<ul>
+<li>The same set of predictor variables were used to predict log price using a Gaussian model.</li>
+</ul>
+<p>5 ANOVA</p>
+<ul>
+<li>Using ANOVA, property type and neighborhood were found to significant.</li>
+</ul>
+<p>This was done to check if the categorical values - neighborhood and property type have any significance on price.</p>
 </div>
 <div id="model-training-and-assessment" class="section level2">
 <h2>Model Training and Assessment</h2>
 <p>A test and train data was prepared where 75% of the data was split into train, and the remaining 25% of the data was used for test. This was accomplished using an R package - caTools.</p>
-<p>There was no hyperparameter during done for Linear Regression, Decision Trees and Generalized Linear Model.</p>
-<p>For Random Tree, hyperparameter tuning was performed on “mtry”. All models were assessed on the same parameter - R^2 value.</p>
+<p>There was no hyper parameter tuning done for Linear Regression, Decision Trees and Generalized Linear Model.</p>
+<p>For Random Tree, hyper parameter tuning was performed on “mtry” using Grid Search. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.</p>
+<p>All models were assessed on the same parameter - R^2 value.</p>
+<ul>
+<li><p>For the linear regression model, R^2 value was found to be 69.82%.</p></li>
+<li><p>Using Decision Trees, the R^2 value was found to be 61.69%.</p></li>
+<li><p>Using a Random Tree Forest model, the R^2 value was found to be 66.94%.</p></li>
+<li><p>Using a Generalized Linear Model, the R^2 value was found to be 68%.</p></li>
+</ul>
+<p>Based on this, the linear regression model wins.</p>
 </div>
 <div id="model-evaluation" class="section level2">
 <h2>Model Evaluation</h2>
+<p>The models were evaluated based on a utility function created that calculates the profit predicted using each model. This utility function sums up the difference between Actual and Predicted values. Linear Regression wins based on this.</p>
 </div>
 <div id="recommendation" class="section level2">
 <h2>Recommendation</h2>
-</div>
-<div id="future-scope" class="section level2">
-<h2>Future Scope</h2>
+<p>Currently, the linear regression model performs better compared to the other models. There are a few more features that can be looked into to see if they influence price -</p>
+<ul>
+<li><p>Amenities</p></li>
+<li><p>Reviews and Review Ratings (reviews data) - this would require sentiment analysis.</p></li>
+<li><p>Seasonality data (calendar data)</p></li>
+</ul>
+<p>Models should also be assessed on other goodness of fit metrics like RMSE and MAE.</p>
+<p>Some more feature engineering could be done to calculate the proximity to airports, light rail station etc.</p>
+<p>It might also be worthwhile to look at the outliers for price and either cap them at a threshold or removing them to build a better prediction model.</p>
+<p>Modeling techniques like XGBoost, Support Vector Regression, Neural Networks can also be applied.</p>
 </div>
 <div id="code" class="section level2">
 <h2>Code</h2>
+<p>The markdown file can be found here - <a href="https://github.com/sanjanagupta16/Data-Science-Process/blob/master/markdown_Seattle.Rmd" class="uri">https://github.com/sanjanagupta16/Data-Science-Process/blob/master/markdown_Seattle.Rmd</a></p>
 </div>
 </section>
 
