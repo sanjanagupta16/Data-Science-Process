@@ -5,7 +5,8 @@ This is the project done for the Data 598C course at University of Washington.
 ## Problem Statement
 
 Airbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests. 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\airbnb_trend.png)
+
+![](images\airbnb_trend.png)
 
 The number of new hosts have been steadily increasing since 2008, however, in the last couple of years there has been a decrease in this number.
 
@@ -18,6 +19,7 @@ The purpose of this project to predict the base price for properties in Seattle 
 The data set used for this project comes from Kaggle's Seattle Airbnb Open Data which was scraped on 25th June, 2018.
 
 The data set can be found here - [data](https://www.kaggle.com/airbnb/seattle).
+
 This data contains information about the following:
 
 1. All Seattle listings: close to 4000 entries with 92 features.
@@ -85,17 +87,18 @@ Most of the free text variables like - host description, summary, written review
 As a part of feature engineering, `price` and `accommodates` columns were log-transformed.
 
 This was done because: on plotting the `Price` data, it was found to be highly skewed:
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\price.png)
+![](images\price.png)
 
 On log-transforming this column, it was less skewed which made the results more interpretable:
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\log_price.png)
+![](images\log_price.png)
 
 Also, looking at assumptions for a linear model with price as a response, it was found to violate the normality assumption:
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\normality_price.png)
+![](images\normality_price.png)
 
 The same with a log transformed price column resulted in the residuals being normally distributed.
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\normality_log.png)
+
+![](images\normality_log.png)
 
 Similar results were found for `accommodates` column and was hence log-transformed.
 
@@ -112,10 +115,12 @@ Since this is a prediction problem, with a single dependent variable `price` and
 The predictor variables considered are: `accommodates`, `bedrooms`, `bathrooms`, `room_type`, `property_type`, `host_is_superhost`, `cancellation_policy`, `availability_365`, `cleaning_fee`, `extra_people`, `latitude`, `longitude`, `minimum_nights`, `maximum_nights`, `instant_bookable`, `bed_type` and `number_of_reviews.`
 
 A correlation matrix was also built to check if any of the variables used were highly correlated. There was some correlation found, but it was not strong enough to worry multicollinearity.
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\corr_plot.png)
+
+![](images\corr_plot.png)
 
 1. The initial linear regression model was fitted with the predictor variables mentioned above with price as response. Plotting this model:
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\LM1.png)
+
+![](images\LM1.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is not normally distributed.
@@ -123,14 +128,16 @@ A correlation matrix was also built to check if any of the variables used were h
 
 
 2. The second linear regression model was fitted with the predictor variables mentioned above with `log_price` as response. This was a better fit than the previous model. Plotting this model:
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\LM2.png)
+
+![]images\LM2.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is more normally distributed than the previous model.
    - From the Scale-Location plot, there isn't any heteroskedasticity.
 
 3. The next linear regression model was fitted with the predictor variables mentioned above using `log_accommodates` instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\LM3.png)
+
+![](images\LM3.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is more normally distributed.
@@ -144,10 +151,10 @@ Predictor variables that were found to be highly significant are: `room_type Sha
 CART model was chosen to predict a continuous variable `price`. This was done to compare the results of a Linear Regression model with that of a Regression Decision Tree.
 
 1. As a baseline, a decision tree was created using bedrooms to predict the log price.
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\cart1.png)
+![](images\cart1.png)
 
 2. Final decision tree was created using the same set of predictor variables used in the linear regression model to predict log price. This was found to be the best fit for decision tree.
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\CART2.png)
+![](images\CART2.png)
 
 It was found that variables that were significant were : `bathrooms`, `bedrooms`, `cancellation_policy`, `cleaning_fee`, `extra_people`, `latitude`, `log_accommodates`, `longitude`, `maximum_nights`, `minimum_nights`, `number_of_reviews`, `property_type`, `room_type` and `security_deposit`.
 
@@ -157,22 +164,22 @@ Random Forest model was chosen since typically, it  provides a higher accuracy c
 
 1. The baseline model was fitted using the same set of predictor variables were used to predict log price with mtry = 8. 
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\rf1.png)
+![](images\rf1.png)
 
 2. Hyper parameter tuning was performed on `mtry` using Grid Search. `mtry = 17` was selected as the final parameter. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\rf2.jpeg)
+![](images\rf2.jpeg)
 
 It gives us the top 10 variables that are significant:
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\rfresult.PNG)
+![](images\rfresult.PNG)
 
 ### Generalized Linear Model
 
 The same set of predictor variables were used to predict log price using a Gaussian link function. 
 The results are similar to the linear regression model:
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\glm.png)
+![]images\glm.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is normally distributed.
@@ -202,7 +209,7 @@ Actual vs Predicted graphs were also plotted.
 
 1. $R^2$ value was used to evaluate the accuracy of the models.
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\r2.PNG)
+![](images\r2.PNG)
 
 - For the linear regression model, $R^2$ value was found to be 69.82%.
 - Using Decision Trees, the $R^2$ value was found to be 61.69%.
@@ -215,11 +222,11 @@ But, $R^2$ value is not sufficient to assess a model's accuracy.
 
 2. Actual vs Predicted graphs were plotted for all 4 models:
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\actual vs predicted.PNG)
+![](images\actual vs predicted.PNG)
 
 3. RMSE was used to evaluate the prediction error of all the models.
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\rmse.PNG)
+![](images\rmse.PNG)
 
 - Linear Regression has an RMSE value of 0.335
 - Decision Trees have an RMSE value of 0.335
@@ -230,7 +237,7 @@ Based on this, Random Forest model has the least prediction error, and hence is 
 
 4. The models were evaluated based on a utility function created that calculates the profit predicted using each model. This utility function sums up the difference between Actual and Predicted values. 
 
-![](C:\Users\Sanjana Gupta\Desktop\Winter 2020\Data 598C Data Science Process\Data Science Project\final_write_up\util.PNG)
+![](images\util.PNG)
 
 - A profit of $1978 is predicted with Linear Regression.
 - A profit of $1249 is predicted with Decision Trees.
