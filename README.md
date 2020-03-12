@@ -6,7 +6,7 @@ This is the project done for the Data 598C course at University of Washington.
 
 Airbnb has had an exponential growth since 2009 with over 650K hosts and over 6 million Airbnb listings worldwide with United States being the top destination for guests. 
 
-![](https://github.com/sanjanagupta16/Data-Science-Process/tree/master/images\airbnb_trend.png)
+![](https:\\github.com\sanjanagupta16\Data-Science-Process\tree\master\images\airbnb_trend.png)
 
 The number of new hosts have been steadily increasing since 2008, however, in the last couple of years there has been a decrease in this number.
 
