@@ -268,4 +268,4 @@ Based on this, Random Forest model gives the highest profit.
 
 ## Code
 
-The markdown file can be found here - [code](https://github.com/sanjanagupta16/Data-Science-Process/blob/master/markdown_Seattle.Rmd)
+The markdown file can be found here - [code](https://github.com/sanjanagupta16/Data-Science-Process/blob/master/rmarkdown_seattle.Rmd)
