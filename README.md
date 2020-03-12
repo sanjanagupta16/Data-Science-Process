@@ -87,18 +87,18 @@ Most of the free text variables like - host description, summary, written review
 As a part of feature engineering, `price` and `accommodates` columns were log-transformed.
 
 This was done because: on plotting the `Price` data, it was found to be highly skewed:
-![](images\price.png)
+![](./images/price.png)
 
 On log-transforming this column, it was less skewed which made the results more interpretable:
-![](images\log_price.png)
+![](./images/log_price.png)
 
 Also, looking at assumptions for a linear model with price as a response, it was found to violate the normality assumption:
 
-![](images\normality_price.png)
+![](./images/normality_price.png)
 
 The same with a log transformed price column resulted in the residuals being normally distributed.
 
-![](images\normality_log.png)
+![](./images/normality_log.png)
 
 Similar results were found for `accommodates` column and was hence log-transformed.
 
@@ -116,11 +116,11 @@ The predictor variables considered are: `accommodates`, `bedrooms`, `bathrooms`,
 
 A correlation matrix was also built to check if any of the variables used were highly correlated. There was some correlation found, but it was not strong enough to worry multicollinearity.
 
-![](images\corr_plot.png)
+![](./images/corr_plot.png)
 
 1. The initial linear regression model was fitted with the predictor variables mentioned above with price as response. Plotting this model:
 
-![](images\LM1.png)
+![](./images/LM1.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is not normally distributed.
@@ -129,7 +129,7 @@ A correlation matrix was also built to check if any of the variables used were h
 
 2. The second linear regression model was fitted with the predictor variables mentioned above with `log_price` as response. This was a better fit than the previous model. Plotting this model:
 
-![]images\LM2.png)
+![](./images/LM2.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is more normally distributed than the previous model.
@@ -137,7 +137,7 @@ A correlation matrix was also built to check if any of the variables used were h
 
 3. The next linear regression model was fitted with the predictor variables mentioned above using `log_accommodates` instead of accommodates with log price as the response variable. This was found to be the best fit for linear regression.
 
-![](images\LM3.png)
+![](./images/LM3.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is more normally distributed.
@@ -151,10 +151,11 @@ Predictor variables that were found to be highly significant are: `room_type Sha
 CART model was chosen to predict a continuous variable `price`. This was done to compare the results of a Linear Regression model with that of a Regression Decision Tree.
 
 1. As a baseline, a decision tree was created using bedrooms to predict the log price.
-![](images\cart1.png)
+![](./images/cart1.png)
 
 2. Final decision tree was created using the same set of predictor variables used in the linear regression model to predict log price. This was found to be the best fit for decision tree.
-![](images\CART2.png)
+
+![](./images/CART2.png)
 
 It was found that variables that were significant were : `bathrooms`, `bedrooms`, `cancellation_policy`, `cleaning_fee`, `extra_people`, `latitude`, `log_accommodates`, `longitude`, `maximum_nights`, `minimum_nights`, `number_of_reviews`, `property_type`, `room_type` and `security_deposit`.
 
@@ -164,22 +165,22 @@ Random Forest model was chosen since typically, it  provides a higher accuracy c
 
 1. The baseline model was fitted using the same set of predictor variables were used to predict log price with mtry = 8. 
 
-![](images\rf1.png)
+![](./images/rf1.png)
 
 2. Hyper parameter tuning was performed on `mtry` using Grid Search. `mtry = 17` was selected as the final parameter. Also, the nodesize and ntree (number of trees) parameters were also tuned to find the best fit.
 
-![](images\rf2.jpeg)
+![](./images/rf2.jpeg)
 
 It gives us the top 10 variables that are significant:
 
-![](images\rfresult.PNG)
+![](./images/rfresult.PNG)
 
 ### Generalized Linear Model
 
 The same set of predictor variables were used to predict log price using a Gaussian link function. 
 The results are similar to the linear regression model:
 
-![]images\glm.png)
+![](./images/glm.png)
 
    - From the residual plot, we can see that the data is linear.
    - From the Normality Q-Q Plot, the residual is normally distributed.
@@ -209,7 +210,7 @@ Actual vs Predicted graphs were also plotted.
 
 1. $R^2$ value was used to evaluate the accuracy of the models.
 
-![](images\r2.PNG)
+![](./images/r2.PNG)
 
 - For the linear regression model, $R^2$ value was found to be 69.82%.
 - Using Decision Trees, the $R^2$ value was found to be 61.69%.
@@ -222,11 +223,11 @@ But, $R^2$ value is not sufficient to assess a model's accuracy.
 
 2. Actual vs Predicted graphs were plotted for all 4 models:
 
-![](images\actual vs predicted.PNG)
+![](./images/actual vs predicted.PNG)
 
 3. RMSE was used to evaluate the prediction error of all the models.
 
-![](images\rmse.PNG)
+![](./images/rmse.PNG)
 
 - Linear Regression has an RMSE value of 0.335
 - Decision Trees have an RMSE value of 0.335
@@ -237,7 +238,7 @@ Based on this, Random Forest model has the least prediction error, and hence is 
 
 4. The models were evaluated based on a utility function created that calculates the profit predicted using each model. This utility function sums up the difference between Actual and Predicted values. 
 
-![](images\util.PNG)
+![](./images/util.PNG)
 
 - A profit of $1978 is predicted with Linear Regression.
 - A profit of $1249 is predicted with Decision Trees.
