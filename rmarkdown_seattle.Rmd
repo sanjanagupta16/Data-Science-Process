@@ -8,6 +8,9 @@ output:
   pdf_document: default
 always_allow_html: yes
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 #### GitHub Repo - https://github.com/sanjanagupta16/Data-Science-Process
 
@@ -32,7 +35,11 @@ library(plotly)
 library(devtools)
 library(kableExtra)
 library(here)
-
+library(janitor)
+library(Hmisc)
+library(corrplot)
+library(jtools)
+library(caret)
 #setwd("~/Desktop/Winter 2020/Data 598C Data Science Process/Data Science Project")
 #setwd(here("/Data Science Project"))
 ```
@@ -59,7 +66,7 @@ Viewing the data in different formats
 #tail(data_train, 50)
 ```
 
-## Data Understanding & Data Cleanng
+## Data Understanding & Data Cleaning
 
 1. Data Cleaning - removing columns
 ```{r data-clean}
@@ -139,7 +146,7 @@ data_train$instant_bookable <- as.factor(data_train$instant_bookable)
 data_train$bed_type <- as.factor(data_train$bed_type)
 ```
 
-4. Changing host reponse time, acceptance rate from factor to numeric
+4. Changing host response time, acceptance rate from factor to numeric
 ```{r convert-num2}
 set.seed(891)
 data_train$host_response_rate<- as.numeric(gsub("%", "", as.character(data_train$host_response_rate)))/100
@@ -193,6 +200,13 @@ summary_df <- data.frame(summary(data_train))
 set.seed(891)
 data_train$log_price <- log(data_train$price)
 data_train$log_acc <- log(data_train$accommodates)
+
+ggplot(data_train, aes(price)) + geom_bar() + theme_bw()
+ggplot(data_train, aes(log_price)) + geom_bar() + theme_bw()
+
+ggplot(data_train, aes(accommodates)) + geom_bar() + theme_bw()
+ggplot(data_train, aes(log_acc)) + geom_bar() + theme_bw()
+
 ```
 
 
@@ -246,28 +260,46 @@ axis(1, seq(0,2018, 100))
 ```
 The number of new hosts have been steadily increasing since 2008, however, in the last couple of years there has been a decrease in this number.
 
-2. Analysing neighborhood grouping
+2. Analyzing neighborhood grouping
 ```{r neighborhood}
 set.seed(891)
+
 #In neighborhood group cleansed, there are 794 rows with "Other Neighborhoods"
 #Need to fix this - maybe look at neighorhood cleansed column instead?
 #Looking at categorical data now
 sorted <- sort(table(data_train$host_neighbourhood), decreasing = TRUE)
 #head(subset(data_train, select = 'neighbourhood_group_cleansed'))
 fact <- factor(data_train$neighbourhood_group_cleansed)
-count(data_train, 'neighbourhood_group_cleansed')
-count(data_train, 'neighbourhood_cleansed')
+#count(data_train, 'neighbourhood_group_cleansed')
+#count(data_train, 'neighbourhood_cleansed')
 
 #Getting a count of listings per neighborhood
 #write.csv(neigborhood_data, "neighborhoodcount.csv")
 #count(data_train$neighbourhood_cleansed)
 plot(data_train$neighbourhood_cleansed, xlab = 'Neighborhoods', ylab = 'Count')
+#ggplot(data_train, aes(neighbourhood_cleansed)) + geom_bar() + theme_bw() 
 neighborhood <- (data_train$neighbourhood_cleansed)
 #x <- sort(count((neighborhood)))
 #arrange(data_train, neighbourhood_cleansed)
 neighborhood_data <- data_train[order(data_train[,21] ),]
 #summary(neighborhood_data$neighbourhood_cleansed)
+
+data_train %>% 
+  tabyl(neighbourhood_cleansed) %>% 
+  adorn_totals("row") %>% 
+  adorn_pct_formatting() %>% 
+  nrow()
+
+
+data_train %>% 
+  tabyl(neighbourhood_cleansed) %>% 
+  adorn_pct_formatting() %>% 
+  arrange(-n) %>% 
+  filter(n > 10) %>% 
+  adorn_totals("row") %>% 
+  head()
 ```
+There's a total of 88 neighborhoods.
 
 ```{r plot1}
 set.seed(891)
@@ -285,25 +317,26 @@ barplot(sort(table(data_train$neighbourhood_group_cleansed), decreasing = TRUE),
 ```{r plot2}
 set.seed(891)
 #barplot(table(data_train$neighbourhood_group_cleansed), density = 20, ylab = "Count",horiz = FALSE , main = "Distribution of Listings Per Neighborhood", beside = FALSE) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggplot(data_train, aes(neighbourhood_group_cleansed)) + geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(data_train, aes(neighbourhood_group_cleansed)) + theme_bw()+ geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 ```
 
 3. Looking at some more plots - Count of Host Listings
 ```{r count-listings}
 set.seed(891)
 #barplot(data_train$host_listings_count, main = "Count of Host Listings", xlab = "", ylab = "Count") 
-ggplot(data_train, aes(host_listings_count)) + geom_bar(na.rm = TRUE) + xlim(0,21) 
+ggplot(data_train, aes(host_listings_count)) + geom_bar(na.rm = TRUE) + xlim(0,20) + theme_bw()
 ```
-# Most hosts have a single Airbnb listing.
+Most hosts have a single Airbnb listing.
 
 4. Looking at Types of Airbnb properties
 ```{r property_type}
 set.seed(891)
 #barchart(data_train$property_type, main = "Types of Airbnb Properties", xlab = "Count")
 prop_type <- table(data_train$property_type)
-barplot(table(data_train$property_type), ylab = "Count",horiz = FALSE, main = "Types of Airbnb Properties", beside = FALSE, las = 1)
 
-ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(data_train, aes(property_type)) + geom_bar() + theme_bw()
+
+ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 #plot(data_train$host_is_superhost)
 ```
 
@@ -312,14 +345,14 @@ ggplot(data_train, aes(property_type)) + geom_bar(na.rm = TRUE, stat = "count") 
 set.seed(891)
 z = table(data_train$room_type,data_train$neighbourhood_group)
 kable(z)  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed","responsive"))
+  kable_styling(latex_options = "scale_down")
 ```
 
 
 ```{r boxplot1}
 set.seed(891)
-data_train %>% boxplot(price ~ neighbourhood_group_cleansed,data = ., main="Box Plot of price vs neighbourhood", 
-                     ylab="neighbourhood", xlab="Price",horizontal=TRUE)
+data_train %>% boxplot(price ~ neighbourhood_group_cleansed,data = ., main="Box Plot of price vs neighborhood", 
+                     ylab="neighborhood", xlab="Price",horizontal=TRUE)
 ```
 
 6. Number of listings per neighborhood
@@ -389,7 +422,7 @@ zipReviews <- listingdf %>% group_by(zipcode = zipcode) %>% summarise(avg_loc_re
 average_price <- data_train %>% group_by(room_type) %>% summarise(price = mean(price))
 colnames(average_price)[1] <- "Room Type"
 colnames(average_price)[2] <- "Average Price"
-print((average_price))
+kable((average_price)) %>% kable_styling(latex_options = c("scale_down","condensed"))
 ```
 
 10. Top 25 most expensive listings
@@ -417,11 +450,12 @@ ggmap(top_map) +
 ## Model Selection
 
 #### Clustering
-Used Clustering to compare which areas of Seattle have a higher concentration of airbnb listings.
+Used Clustering to compare which areas of Seattle have a higher concentration of Airbnb listings.
 
 Plotting the listings on the map of Seattle
 ```{r clustering}
 set.seed(891)
+
 #Reading Listings Data
 listingdf <- read.csv('data/listings.csv')
 #Creating a link for each pop up
@@ -447,14 +481,23 @@ We can see that most of the listings are clustered around Downtown and Cap Hill.
 #### Linear Regression
 
 1. Which variables influence price?
-Predictor variables selected - bathrooms, price, property type, accomodates, bedrooms, room type, host is superhost, cancellation policy, availability_365, cleaning_fee, extra_people, security_deposit, instant_bookable, maximum_nights, minimum_nights, bed_type, latitude, longitude, number_of_reviews
+Predictor variables selected - bathrooms, price, property type, accommodates, bedrooms, room type, host is superhost, cancellation policy, availability_365, cleaning_fee, extra_people, security_deposit, instant_bookable, maximum_nights, minimum_nights, bed_type, latitude, longitude, number_of_reviews
 ```{r LR}
 set.seed(891)
 LM_model1 <- summary(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost + cancellation_policy + availability_365 +cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train))
 
 plot(price ~room_type + accommodates + bedrooms + bathrooms + property_type + factor(neighbourhood_cleansed) + host_is_superhost, data = data_train) + abline(lm(formula = price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_model1
-#qqnorm(LM_model1$residuals, main = "Normal qq plot of residuals")
+qqnorm(LM_model1$residuals, main = "Normal qq plot of residuals")
+
+LM1 <- lm(lm(formula = (price) ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost + cancellation_policy + availability_365 +cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train))
+plot(LM1)
+
+summ(LM1)
+
+#Calculate RMSE
+RMSE <- sqrt(mean(residuals(LM1)^2))
+cat("RMSE = ", RMSE)
 
 ```
 Results:
@@ -472,7 +515,9 @@ The following features are significant to price:
 - Location (Lat/Long)
 - Number of reviews
 
-R-squared is 61.99%, which is not bad
+R-squared is 61.99%, which is not bad.
+
+RMSE = 63.25.
 
 2. Taking log(price) with multiple linear regression:
 ```{r lR-with-logprice}
@@ -481,6 +526,15 @@ LM_model2 <- summary(lm(formula = log_price ~ room_type + accommodates + bedroom
 
 plot(price ~room_type + accommodates + bedrooms + bathrooms + factor(neighbourhood_cleansed) + host_is_superhost + cancellation_policy + availability_365 +  cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_model2
+
+LM2 <- lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms + property_type + host_is_superhost +cancellation_policy + availability_365 + cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train)
+plot(LM2)
+
+summ(LM2)
+
+#Calculate RMSE
+RMSE <- sqrt(mean(residuals(LM2)^2))
+cat("RMSE = ", RMSE)
 ```
 Results:
 With transforming price on the log scale, the following features are found to be significant:
@@ -501,13 +555,25 @@ With transforming price on the log scale, the following features are found to be
 
 The R-squared metric is 68.68%.
 
-3. Taking log for accomodates: log-accommodates
+RMSE = 0.322
+
+3. Taking log for accommodates: log-accommodates
 ```{r log-acc}
 set.seed(891)
 LM_model3 <- summary(lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews + availability_365, data = data_train))
 
 plot(price ~room_type + log_acc + bedrooms + bathrooms + factor(neighbourhood_cleansed) + host_is_superhost + cancellation_policy + availability_365 +  cleaning_fee + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = data_train) + abline(lm(formula = log_price ~ room_type + accommodates + bedrooms + bathrooms, data = data_train))
 LM_model3
+
+LM3 <- lm(formula = log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews + availability_365, data = data_train)
+
+plot(LM3)
+
+summ(LM3)
+
+#Calculate RMSE
+RMSE <- sqrt(mean(residuals(LM3)^2))
+cat("RMSE = ", RMSE)
 ```
 Results:
 With transforming price on the log scale, the following features are found to be significant (same as previous model):
@@ -527,6 +593,10 @@ With transforming price on the log scale, the following features are found to be
 - Number of Reviews
 
 The R-squared metric is 69.15%.
+
+RMSE = 0.321
+
+
 Since the R-squared value is slightly better with a log transformed accommodates feature, I will be using this going forward.
 
 4. Pairwise comparison
@@ -638,23 +708,27 @@ correlation_accuracy <- cor(LM_pred)
 head(LM_pred)
 correlation_accuracy
 plot(lm_model)
+summ(lm_model)
 
-#ggplot(data = testData, aes(x = actual_pred$Actual, y = actual_pred$Predicted)) +
-#geom_point() +
-#stat_smooth(method = "lm", col = "dodgerblue3") +
-#theme(panel.background = element_rect(fill = "white"),
-#axis.line.x=element_line(),
-#axis.line.y=element_line()) +
-#ggtitle("Linear Model Fitted to Data") + ylab("Predicted") + xlab("Actuals")
+#Calculate prediction error - RMSE
+RMSE(price_pred, test$log_price)
+
 ```
-Update: R-squared value is 69.9%.
+R-squared value is 69.9%.
+
+RMSE = 0.335
 
 7. Correlation matrix
 ```{r corr}
 set.seed(891)
+
+
 data.corr <- data_train %>% filter(!is.na(log_acc)) %>% filter(!is.na(bathrooms)) %>% filter(!is.na(bedrooms)) %>% filter(!is.na(availability_365)) %>% filter(!is.na(cleaning_fee)) %>% filter(!is.na(extra_people)) %>% filter(!is.na(security_deposit)) %>% filter(!is.na(maximum_nights)) %>% filter(!is.na(minimum_nights)) %>% filter(!is.na(latitude)) %>% filter(!is.na(longitude)) %>% filter(!is.na(number_of_reviews)) %>%
   select(log_price, price, bedrooms, bathrooms, log_acc, availability_365, cleaning_fee, security_deposit, maximum_nights, minimum_nights, extra_people, latitude, longitude, number_of_reviews)
 kable(cor(data.corr)) %>% kable_styling()
+
+#rcorr(data.corr, type = c("pearson", "spearman"))
+#corrplot(data.corr)
 ```
 There is some correlation between the variables, but not strong enough to worry about multicollinearity.
 
@@ -666,7 +740,15 @@ set.seed(891)
 library(rpart)
 library(rpart.plot)
 CARTmodel1 = rpart(log_price ~ bedrooms, data = train, cp =0.001)
+
 prp(CARTmodel1)
+printcp(CARTmodel1)
+plotcp(CARTmodel1)
+summary(CARTmodel1)
+
+plot(CARTmodel1, uniform=TRUE,
+   main="Regression Tree for Price ")
+text(CARTmodel1, use.n=TRUE, all=TRUE, cex=.8)
 ```
 
 2. Making predictions
@@ -678,9 +760,10 @@ predDT = predict(CARTmodel1, newdata = test)
 #SSE
 SSE = sum((predDT - test$log_price)^2)
 cat("SSE = ",SSE)
+
 # RMSE
-RMSE = sqrt(mean((predDT - test$log_price)^2))
-cat("\nRMSE = ",RMSE)
+#Calculate RMSE
+RMSE(predDT, test$log_price)
 
 # Baseline
 baseline = mean(train$log_price)
@@ -701,6 +784,8 @@ head(DT_pred)
 ```
 R-squared value of 44% with 1 predictor - bedrooms.
 
+RMSE = 0.426
+
 
 3. Creating CART model to predict log(price) using variables: room_type, log_acc, bedrooms, bathrooms, property_type, host_is_superhost, cleaning_fee, cancellation_policy, extra_people, security_deposit, instant_bookable, maximum_nights,  minimum_nights, bed_type, latitude, longitude, number_of_reviews
 
@@ -708,6 +793,15 @@ R-squared value of 44% with 1 predictor - bedrooms.
 set.seed(891)
 CARTmodel2 = rpart(log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews, data = train, cp =0.001)
 prp(CARTmodel2)
+
+rpart.plot(CARTmodel2)
+printcp(CARTmodel2)
+plotcp(CARTmodel2)
+#summary(CARTmodel2)
+
+plot(CARTmodel2, uniform=TRUE,
+   main="Regression Tree for Price ")
+text(CARTmodel2, use.n=TRUE, all=TRUE, cex=.8)
 ```
 
 4. Make predictions:
@@ -721,9 +815,9 @@ predDT2 = predict(CARTmodel2, newdata = test)
 #SSE
 SSE = sum((predDT2 - test$log_price)^2)
 cat("SSE = ",SSE)
-# RMSE
-RMSE = sqrt(mean((predDT2 - test$log_price)^2))
-cat("\nRMSE = ",RMSE)
+
+#Calculate RMSE
+RMSE(price_pred, test$log_price)
 
 # Baseline
 baseline = mean(train$log_price)
@@ -744,6 +838,24 @@ plot(DT_pred2)
 
 ```
 Using Decision Trees, R-squared value is 61.69%.
+
+RMSE = 0.335
+
+Predictor variables found to be significant are:
+- bathrooms 
+- bedrooms
+- cancellation_policy
+- cleaning_fee
+- extra_people 
+- latitude
+- log_accommodates
+- longitude,
+- maximum_nights 
+- minimum_nights 
+- number_of_reviews 
+- property_type
+- room_type  
+- security_deposit.
 
 #### Random Forest
 
@@ -772,28 +884,8 @@ plot(RFmodel1)
 round(importance(RFmodel1),2)
 ```
 
-2. Intepreting Model
-```{r RTF-results}
-set.seed(891)
-explain_forest(RFmodel1, interactions = TRUE, data = train)
-
-#Variable Importance Measure
-importance_frame <- measure_importance(RFmodel1)
-save(importance_frame, file = "importance_frame.rda")
-load("importance_frame.rda")
-importance_frame
-
-#Multi Way Importance Plot
-plot_multi_way_importance(RFmodel1, size_measure = "no_of_nodes") # gives the same result as below but takes longer
-plot_multi_way_importance(importance_frame, size_measure = "no_of_nodes")
-
-#Comparing Measures Using ggpairs
-plot_importance_ggpairs(RFmodel1) 
-plot_importance_ggpairs(importance_frame)
-```
-
-3. Using Random Forest to make predictions
-```{r predict}
+2. Using Random Forest to make predictions
+```{r predict2}
 # Make predictions
 predTest <- predict(RFmodel1, newdata = test, type = "response")
 
@@ -802,16 +894,15 @@ RT_pred <- data.frame(cbind(Actual = test$log_price, Predicted= predTest))
 RT_pred
 ```
 
-4. Estimating Performance for Random Forest 
+3. Estimating Performance for Random Forest 
 ````{r}
 set.seed(891)
 # SSE
 SSE = sum((predTest - test$log_price)^2)
 cat("SSE = ",SSE)
 
-# RMSE
-RMSE = sqrt(mean((predTest - test$log_price)^2))
-cat("\nRMSE = ",RMSE)
+#Calculate RMSE
+RMSE(predTest, test$log_price)
 
 # Baseline
 baseline = mean(test$log_price)
@@ -825,9 +916,11 @@ cat("\nSSEb = ",SSEb)
 Rsquared = 1 - SSE/SSEb
 cat("\nRsquared = ",Rsquared)
 ```
-Random Tree Forest model gives an R-squared value of 66.55%.
+Random Forest model gives an R-squared value of 66.55%.
 
-5. Parameter Tuning - Grid Search
+RMSE = 0.329
+
+4. Parameter Tuning - Grid Search
 https://uc-r.github.io/random_forests
 ```{r}
 set.seed(891)
@@ -843,7 +936,7 @@ print(rf_default)
 
 ```
 
-6. Building a new Random Forest with parameter - mtry = 17
+5. Building a new Random Forest with parameter - mtry = 17
 ```{r RTF2}
 set.seed(891)
 library(randomForest)
@@ -861,8 +954,8 @@ plot(RFmodel2)
 round(importance(RFmodel2),2)
 ```
 
-7. Intepreting New Model
-```{r RTF-results}
+6. Interpreting New Model
+```{r RTF-results3}
 set.seed(891)
 explain_forest(RFmodel2, interactions = TRUE, data = train)
 
@@ -879,9 +972,23 @@ plot_multi_way_importance(importance_frame, size_measure = "no_of_nodes")
 #Comparing Measures Using ggpairs
 plot_importance_ggpairs(RFmodel2) 
 plot_importance_ggpairs(importance_frame)
-```
 
-8. Using new Random Forest to make predictions
+
+```
+Based on the Random Forest Model, the top 10 predictor variables were found to be:
+- bedrooms
+- room type
+- bathrooms
+- cleaning fee
+- longitude
+- latitude
+- log accommodates
+- security deposit
+- minimum nights
+- availability 365
+
+
+7. Using new Random Forest to make predictions
 ```{r predict}
 set.seed(891)
 # Make predictions
@@ -892,16 +999,15 @@ RT_pred2 <- data.frame(cbind(Actual = test$log_price, Predicted= predTest2))
 RT_pred2
 ```
 
-9. Parameters for Random Forest 
+8. Parameters for Random Forest 
 ````{r}
 set.seed(891)
 # SSE
 new_SSE = sum((predTest2 - test$log_price)^2)
 cat("SSE = ",new_SSE)
 
-# RMSE
-new_RMSE = sqrt(mean((predTest2 - test$log_price)^2))
-cat("\nRMSE = ",new_RMSE)
+#Calculate RMSE
+RMSE(predTest2, test$log_price)
 
 # Baseline
 new_baseline = mean(test$log_price)
@@ -915,9 +1021,11 @@ cat("\nSSEb = ",new_SSEb)
 new_Rsquared = 1 - (new_SSE/new_SSEb)
 cat("\nRsquared = ",new_Rsquared)
 ```
-Random Tree Forest model gives an R-squared value of 66.94%.
+Random Forest model gives an R-squared value of 66.94%.
 
-10. Measuring Predictive Accuracy
+RMSE = 0.327
+
+9. Measuring Predictive Accuracy - Not complete
 ```{r}
 # create training and validation data 
 library(rsample)
@@ -932,12 +1040,7 @@ ames_valid <- assessment(valid_split)
 x_test <- ames_valid[setdiff(names(ames_valid), c("log_acc","bedrooms", "bathrooms","property_type","host_is_superhost", "cleaning_fee", "cancellation_policy", "extra_people", "security_deposit","instant_bookable","maximum_nights","minimum_nights","bed_type","latitude","longitude","number_of_reviews"))]
 y_test <- ames_valid$log_price
 
-rf_oob_comp <- randomForest(
-  formula = log_price ~room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews,
-  data    = ames_train_v2,
-  xtest   = x_test,
-  ytest   = y_test
-)
+#rf_oob_comp <- randomForest(formula = log_price ~room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews,data    = ames_train_v2,xtest   = x_test,ytest   = y_test)
 
 # extract OOB & validation errors
 oob <- sqrt(rf_oob_comp$mse)
@@ -958,6 +1061,7 @@ tibble::tibble(
 
 
 ### ANOVA - to compare categorical data
+
 ```{r anova}
 AOV_res <- summary(aov(log_price ~ factor(property_type) + factor(neighbourhood_cleansed), data = data_train))
 AOV_res
@@ -966,7 +1070,9 @@ Results:
 As we can see, property type and neighborhood do have a significant impact on price since the p-value is much smaller than the significance level.
 
 ### GLM
+
 1. Fitting model
+
 ```{r glm}
 set.seed(891)
 library(jtools)
@@ -976,21 +1082,26 @@ glm_1 <- glm(log_price ~ room_type + log_acc + bedrooms + bathrooms + property_t
 summary(glm_1)
 
 ## review the model summary
-summary(glm_1)
-hist(glm_1$fitted.values)
+#summary(glm_1)
+#hist(glm_1$fitted.values)
+summ(glm_1,robust = 'HC1', scale = TRUE, confint = TRUE)
+
+plot(glm_1)
 
 ## check out fitted values against the originals
 plot(data_train$log_price, glm_1$fitted.values)
 abline(a=0, b=1)
 
-plot(data_train$log_price, glm_1$fitted.values, xlim = c(0, 37000), ylim = c(0, 37000))
-abline(a=0, b=1)
+#plot(data_train$log_price, glm_1$fitted.values, xlim = c(0, 37000), ylim = c(0, 37000))
+#abline(a=0, b=1)
 
-summ(glm_1, exp = TRUE)
 
 ## MSE and RMSE
-mean((glm_1$fitted.values - data_train$log_price)^2)
-sqrt(mean((glm_1$fitted.values - data_train$log_price)^2))
+MSE <-  mean((glm_1$fitted.values - data_train$log_price)^2)
+RMSE <- sqrt(mean((glm_1$fitted.values - data_train$log_price)^2))
+
+cat("MSE = ", MSE)
+cat("\n RMSE = ", RMSE)
 ```
 Results:
 With transforming price on the log scale, the following features are found to be significant (same as previous model):
@@ -1009,9 +1120,10 @@ With transforming price on the log scale, the following features are found to be
 - Latitude
 - Longitude
 - Number of Reviews
-- Availability 365
 
-The R-squared metric is 83%.s
+The R-squared metric is 67%.
+
+RMSE = 0.323
 
 2. Price Prediction with GLM
 ```{r glm_predict}
@@ -1019,76 +1131,141 @@ set.seed(891)
 
 glm_model <- glm(log_price ~ room_type + log_acc + bedrooms + bathrooms + property_type + host_is_superhost + cleaning_fee + cancellation_policy + extra_people + security_deposit + instant_bookable + maximum_nights + minimum_nights + bed_type + latitude + longitude + number_of_reviews + availability_365, family = gaussian(link  = "log"), data = train)
 
-price_pred2 <- predict(glm_model, test)
+price_glm <- predict(glm_model, test)
 
-#summary(glm_model)
-summ(glm_model, exp = TRUE)
+summary(glm_model)
+summ(glm_model, robust = 'HC1')
 
-GLM_pred <- data.frame(cbind(Actual = test$log_price, Predicted= price_pred2))
+GLM_pred <- data.frame(cbind(Actual = test$log_price, Predicted= exp(price_glm)))
 correlation_accuracy <- cor(GLM_pred)
 
 head(GLM_pred)
 correlation_accuracy
-plot(glm_model)
+#plot(glm_model)
 
+#effect_plot(glm_model, pred = bedrooms, interval = TRUE, plot.points = TRUE)
+plot_summs(glm_model)
+plot_summs(glm_model, scale = TRUE, plot.distributions = TRUE, inner_ci_level = .9)
 
+#Calculate RMSE
+RMSE(price_glm, test$log_price)
 ```
-Using the mcFadden Pseudo R-squared parameter, we get an R-squared value of 68%.
+Using the McFadden Pseudo R-squared parameter, we get an R-squared value of 68%.
+
+RMSE = 3.264
 
 ## Model Evaluation
-```{r}
-set.seed(891)
-hist(LM_pred)
-hist(RT_pred)
 
+1. Actual vs Predicted Plot
+
+```{r actual-vs-predicted}
+set.seed(891)
+
+ggplot(LM_pred, aes(x = Predicted, y = Actual)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Linear Regression Prediction")
+
+ggplot(RT_pred, aes(x = Predicted, y = Actual)) + geom_point() + ggtitle("Random Forest Prediction") + geom_smooth()
+
+ggplot(GLM_pred, aes(x = Predicted, y = Actual)) + geom_point() + geom_smooth(method = "glm") + ggtitle("Generalized Linear Model Prediction")
+
+ggplot(DT_pred2, aes(x = Predicted, y = Actual)) + geom_point() + ggtitle("Decision Trees Prediction")  + geom_smooth()
+
+#hist(LM_pred$Predicted, main = "Linear Regression")
+#hist(RT_pred$Predicted, main = "Random Forest")
+#hist(GLM_pred$Predicted, main = "Generalized Linear Regression")
+#hist(DT_pred2$Predicted, main = "Decision Trees")
+```
+Random Forest?
+
+2. $R^2$ Value
+
+Model is evaluated based on R-squared value i.e. % of variability explained by the model.
+```{r plot-R2}
+error_val <- data.frame("Rsquared" = c(61.7, 67, 68.0, 70), "Model" = c("Decision Trees", "Random Forest", "Generalized Linear Regression", "Linear Regression"))
+#sort(error_val$Rsquared)
+ggplot(error_val, aes(Model,Rsquared)) + geom_bar(stat = "identity", position = "dodge") + theme_bw() + xlab("Model") + ylab("R-squared value") + geom_text(aes(label = Rsquared, vjust = -0.25, hjust = 0)) 
 ```
 
-Model is evaluated based on R-squared value i.e. % of variablility explained by the model.
 Predicting price on:
-1. Linear Regression has an R-squared value of 69.82%.
-2. Decision Trees have an R-squared value of  61.69%
-3. Random Tree Forest has an R-square value of 66.94%.
-4. GLM has an R-squared value of 68%.
+- Linear Regression has an R-squared value of 69.82%.
+- Decision Trees have an R-squared value of  61.69%
+- Random Forest has an R-square value of 66.94%.
+- GLM has an R-squared value of 68%.
 
 Based on this, Linear Regression wins.
+But, $R^2$ value is not sufficient to assess a model's accuracy.
+
+3. RMSE - Prediction Error
+```{r plot-RMSE}
+
+error_val2 <- data.frame("RMSE" = c(0.335, 0.355, 0.327, 3.264), "Model" = c("Linear Regression", "Decision Trees", "Random Forest", "GLM"))
+#sort(error_val$Rsquared)
+ggplot(error_val2, aes(Model,RMSE)) + geom_bar(stat = "identity", position = "dodge") + theme_bw() + xlab("Model") + ylab("RMSE") + geom_text(aes(label = RMSE, vjust = -0.25, hjust = 0))
+```
+
+- Linear Regression has an RMSE value of 0.335
+- Decision Trees have an RMSE value of 0.335
+- Random Forest has an RMSE value of 0.327
+- GLM has an RMSE value of 3.264
+
+Based on this, Random Forest model has the least prediction error, and hence is the best model.
+
 
 ## Utility Function
+
+Utility Function created  calculates the profit predicted using each model. This utility function sums up the difference between Actual and Predicted values.
+Since price was log transformed, both Actual and Predicted values are first exponentiated to find the sum of all differences.
+
 1. For Linear Regression
 ```{r util-LR}
 set.seed(891)
-LM_pred$diff <- LM_pred$Actual - LM_pred$Predicted
+library(formattable)
+LM_pred$diff <- exp(LM_pred$Actual) - exp(LM_pred$Predicted)
 diff1 <- sum(LM_pred$diff)
 head(LM_pred)
 cat("Sum of diff = ", diff1)
 ```
-A loss of $6.6 is predicted with linear regression.
+
+A profit of $1978 is predicted with Linear Regression.
 
 2. Decision Trees
 ```{r util-DT}
 set.seed(891)
-DT_pred2$diff <- DT_pred2$Actual - DT_pred2$Predicted
+DT_pred2$diff <- exp(DT_pred2$Actual) - exp(DT_pred2$Predicted)
 diff2 <- sum(DT_pred2$diff)
 head(DT_pred2)
-cat("\n Diff = ", diff2)
+cat("\n Diff = ", (diff2))
 ```
-A loss of $6.70 is predicted with decision trees.
 
-3. Random Tree Forest
+A profit of $1249 is predicted with Decision Trees.
+
+3. Random Forest
 ```{r util-RTF}
 set.seed(891)
-RT_pred2$diff <- RT_pred2$Actual - RT_pred2$Predicted
+RT_pred2$diff <- exp(RT_pred2$Actual) - exp(RT_pred2$Predicted)
 diff3 <- sum(RT_pred2$diff)
 
 head(RT_pred2)
-cat("\n Diff = ",diff3)
+cat("\n Diff = ",(diff3))
 ```
-A loss of $7.5 predicted
+
+A profit of $2815 predicted with a random forest.
 
 4. GLM
 ```{r util-GLM}
 set.seed(891)
-GLM_pred$diff <- GLM_pred$Actual - GLM_pred$Predicted
+GLM_pred$diff <- exp(GLM_pred$Actual) - exp(GLM_pred$Predicted)
 diff4 <- sum(GLM_pred$diff)
 head(GLM_pred)
-cat("Sum of diff = ", diff4)
+cat("Sum of diff = ", (diff4))
 ```
+
+A profit of $1886 is predicted with GLM model.
+
+```{r plot-util}
+library(formattable)
+utility <- data.frame("Profit" = c(currency(ceiling(diff1)), currency(ceiling(diff2)), currency(ceiling(diff3)), currency(ceiling(diff4))), "Model" = c("Linear Regression", "Decision Trees", "Random Forest", "GLM"))
+
+ggplot(utility, aes(Model,Profit)) + geom_bar(stat = "identity", position = "dodge") + theme_bw() + xlab("Model") + ylab("Profit") + geom_text(aes(label = Profit, vjust = -0.25, hjust = 0))
+```
+
+Based on this, Random Forest model gives the highest profit.
