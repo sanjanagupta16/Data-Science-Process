@@ -246,22 +246,22 @@ Based on this, Random Forest model gives the highest profit.
 
 ## Recommendation
 
-Currently, the Random Forest model performs better compared to the other models. 
-There are a few more features that can be looked into to see if they influence price - 
+1. Currently, the Random Forest model performs better compared to the other models. 
+2. There are a few more features that can be looked into to see if they influence price - 
 
 - Amenities
 - Reviews and Review Ratings (reviews data) - this would require sentiment analysis.
 - Seasonality data (calendar data)
 
-Models should also be assessed on other goodness of fit metrics Adjusted $R^2$ and MAE.
+3. Models should also be assessed on other goodness of fit metrics Adjusted $R^2$ and MAE.
 
-Hyper-parameter during can be done for Decision Trees to improve accuracy.
+4. Hyper-parameter during can be done for Decision Trees to improve accuracy.
 
-Some more feature engineering could be done to calculate the proximity to airports, light rail station etc.
+5. Some more feature engineering could be done to calculate the proximity to airports, light rail station etc.
 
-It might also be worthwhile to look at the outliers for price and capping them at a threshold (99 percentile) to see if the results change for the models.
+6. It might also be worthwhile to look at the outliers for price and capping them at a threshold (99 percentile) to see if the results change for the models.
 
-Modeling techniques like XGBoost, Support Vector Regression, Neural Networks can also be applied.
+7. Modeling techniques like XGBoost, Support Vector Regression, Neural Networks can also be applied.
 
 ## Code
 
